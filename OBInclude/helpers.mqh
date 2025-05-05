@@ -26,6 +26,9 @@
 // #import
 //+------------------------------------------------------------------+
 
+#include "OBStruct.mqh";
+
+
 // Add this function to create the folder if it doesn't exist
 bool CreateFolderIfNeeded(string folder)
   {
@@ -389,9 +392,9 @@ string helperTrend(bool direction)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-double candleSize(double open, double close)
+int candleSize(double open, double close)
   {
-   return MathAbs((rA[1].open - rA[1].close)*1/Point());
+   return MathAbs((open - close)*1/Point());
   }
 
 //+------------------------------------------------------------------+
@@ -410,11 +413,15 @@ bool isFirstOB(int i = 0)
       if(a != i &&
          obBuffer[a].startTime < obBuffer[i].startTime && // the tested is newer
          obBuffer[a].isBear == obBuffer[i].isBear &&
-         obBuffer[a].mitigatedTime == 0 &&
-         obBuffer[a].stars > 2 // if 0 stars doesn t count
+         obBuffer[a].stars >= 2 // if 0 stars doesn t count
         )
         {
-         return false;
+         if( obBuffer[a].isBear == false && obBuffer[a].highPrice < obBuffer[i].highPrice){
+           return false;
+         }
+         if( obBuffer[a].isBear == true && obBuffer[a].lowPrice > obBuffer[i].lowPrice){
+           return false;
+         }
         }
      }
    return true;
@@ -479,3 +486,160 @@ bool hasOnGoingPosition(int a)
 
    return false;
   }
+
+
+void preventOverExtention(int i){
+// Get point size and pip value
+   double point = SymbolInfoDouble(Symbol(), SYMBOL_POINT);
+   int digits = (int)SymbolInfoInteger(Symbol(), SYMBOL_DIGITS);
+   double pipValue = digits == 3 || digits == 5 ? point * 10 : point;
+   int OrderBlockCandleIndex = iBarShift(_Symbol,HTOB,obBuffer[i].startTime);
+   
+   // Calculate order block body size in pips
+   double obBodySizePips = MathAbs(obBuffer[i].highPrice - obBuffer[i].lowPrice) / pipValue;
+   
+   // Get ATR for volatility context
+   double atr = iATR(_Symbol, HTOB, ATRPeriod) / pipValue;
+   
+   // Find the highest high after the order block within LookbackCandles
+   double highestHigh = obBuffer[i].highPrice;
+   int highestIndex = OrderBlockCandleIndex;
+   
+   // Bearish order
+   if (obBuffer[i].isBear  == true && iLow(_Symbol,HTOB,0) < highestHigh){
+      highestHigh = iLow(_Symbol,HTOB,0);
+   }
+   
+   if (obBuffer[i].isBear  == false && iHigh(_Symbol,HTOB,0) > highestHigh) { // bullish order
+      highestHigh = iHigh(_Symbol,HTOB,0);
+   }
+   
+   double OBLowPrice = (obBuffer[i].isBear == true) ? obBuffer[i].highPrice: obBuffer[i].lowPrice;
+   // Calculate the bullish move size in pips
+   double bullishMovePips = MathAbs(highestHigh - OBLowPrice) / pipValue;
+   
+   // Check if the bullish move was excessive
+   bool isOverextended = bullishMovePips > MaxMoveATRFactor * atr;
+   
+   if (isOverextended == true){
+      obBuffer[i].isDone= true;
+      obBuffer[i].stars = 0;
+   
+   // Output results
+   string result = StringFormat("Bullish Order Block Analysis (Candle %d):\n", OrderBlockCandleIndex);
+   result += StringFormat("Body Size: %.2f pips\n", obBodySizePips);
+   result += StringFormat("Bullish Move to High: %.2f pips (at candle %d)\n", bullishMovePips, highestIndex);
+   result += StringFormat("ATR (%d periods): %.2f pips\n", ATRPeriod, atr);
+   result += isOverextended ? "WARNING: Excessive bullish move (> 3x ATR)\n" : "Bullish move within normal range\n";
+   
+      Print(result);
+   }
+
+}
+
+// TEST liquidity SWEEP
+// Swing low sweep detector inside OB lifespan
+//+------------------------------------------------------------------+
+//| Function to detect and mark liquidity sweeps within OB timeframe |
+//+------------------------------------------------------------------+
+bool DetectLiquiditySweep(datetime orderBlockTime , int lookbackPeriod=20, int sweepCheckBars=10)
+{
+   // Get the index of the order block candle
+   int obIndex = iBarShift(_Symbol, HTOB, orderBlockTime, true);
+   if(obIndex == -1)
+   {
+      Print("Error: Invalid order block datetime");
+      return false;
+   }
+
+   // Get high and low of the order block candle
+   double obHigh = iHigh(_Symbol, HTOB, obIndex);
+   double obLow = iLow(_Symbol, HTOB, obIndex);
+   datetime obEndTime = iTime(_Symbol, HTOB, 0); // Extend to next candle for rectangle
+
+   // Check for liquidity sweep
+   bool sweepDetected = false;
+   string sweepType = "";
+   double sweepPrice = 0.0;
+   datetime sweepTime = 0;
+
+   for(int i = obIndex - 1; i >= obIndex - sweepCheckBars && i >= 0; i--)
+   {
+      double high = iHigh(_Symbol, PERIOD_CURRENT, i);
+      double low = iLow(_Symbol, PERIOD_CURRENT, i);
+      datetime currentTime = iTime(_Symbol, PERIOD_CURRENT, i);
+
+      // Check for sweep above high
+      if(high > obHigh)
+      {
+         // Verify reversal (next few candles close below high)
+         for(int j = i - 1; j >= i - 3 && j >= 0; j--)
+         {
+            if(iClose(_Symbol, PERIOD_CURRENT, j) < obHigh)
+            {
+               sweepDetected = true;
+               sweepType = "High";
+               sweepPrice = high;
+               sweepTime = currentTime;
+               break;
+            }
+         }
+         if(sweepDetected) break;
+      }
+      // Check for sweep below low
+      else if(low < obLow)
+      {
+         // Verify reversal (next few candles close above low)
+         for(int j = i - 1; j >= i - 3 && j >= 0; j--)
+         {
+            if(iClose(_Symbol, PERIOD_CURRENT, j) > obLow)
+            {
+               sweepDetected = true;
+               sweepType = "Low";
+               sweepPrice = low;
+               sweepTime = currentTime;
+               break;
+            }
+         }
+         if(sweepDetected) break;
+      }
+   }
+
+   // Draw sweep zone if detected
+   if(sweepDetected)
+   {
+      string sweepName = "Sweep_" + TimeToString(sweepTime);
+      double sweepHigh, sweepLow;
+      datetime sweepEndTime = iTime(_Symbol, HTOB, MathMax(0, iBarShift(_Symbol, HTOB, sweepTime) - 1));
+
+      if(sweepType == "High")
+      {
+         sweepHigh = sweepPrice;
+         sweepLow = obHigh;
+      }
+      else
+      {
+         sweepHigh = obLow;
+         sweepLow = sweepPrice;
+      }
+
+      if(!ObjectCreate(0, sweepName, OBJ_RECTANGLE, 0, sweepTime, sweepHigh, sweepEndTime, sweepLow))
+      {
+         Print("Error creating sweep rectangle: ", GetLastError());
+         return false;
+      }
+      ObjectSetInteger(0, sweepName, OBJPROP_COLOR, clrRed);
+      ObjectSetInteger(0, sweepName, OBJPROP_STYLE, STYLE_SOLID);
+      ObjectSetInteger(0, sweepName, OBJPROP_WIDTH, 1);
+      ObjectSetInteger(0, sweepName, OBJPROP_FILL, true);
+      ObjectSetInteger(0, sweepName, OBJPROP_BACK, true);
+      Print("Liquidity sweep detected at ", sweepType, " of order block at ", TimeToString(orderBlockTime));
+      return true;
+   }
+   else
+   {
+      Print("No liquidity sweep detected for order block at ", TimeToString(orderBlockTime));
+   }
+
+   return false;
+}

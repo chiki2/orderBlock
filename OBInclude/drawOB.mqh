@@ -69,19 +69,19 @@ void  DrawOB(int obIndex = 0, int start = 0)
         {
          int barIndex = iBarShift(_Symbol, HTOB, obBuffer[obIndex].prevlowi, true);
          ObjectCreate(0,obBuffer[obIndex].name + "-prevlow", OBJ_ARROW,0, obBuffer[obIndex].prevlowi, high(barIndex));
-         ObjectSetInteger(0,obBuffer[obIndex].name + "-prevlow",OBJPROP_ARROWCODE,242);
+         ObjectSetInteger(0,obBuffer[obIndex].name + "-prevlow",OBJPROP_ARROWCODE,234);
          ObjectSetInteger(0,obBuffer[obIndex].name + "-prevlow",OBJPROP_COLOR,clrBlue);
          ObjectSetString(ChartID(),obBuffer[obIndex].name + "-prevlow",OBJPROP_FONT,"Wingdings");
-         ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-prevlow",OBJPROP_FONTSIZE,20);
+         ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-prevlow",OBJPROP_FONTSIZE,30);
         }
       if(obBuffer[obIndex].prevhighi != 0)
         {
          int barIndex = iBarShift(_Symbol, HTOB, obBuffer[obIndex].prevhighi, true);
          ObjectCreate(0,obBuffer[obIndex].name + "-prevhigh", OBJ_ARROW,0, obBuffer[obIndex].prevhighi, low(barIndex));
-         ObjectSetInteger(0,obBuffer[obIndex].name + "-prevhigh",OBJPROP_ARROWCODE,241);
+         ObjectSetInteger(0,obBuffer[obIndex].name + "-prevhigh",OBJPROP_ARROWCODE,233);
          ObjectSetInteger(0,obBuffer[obIndex].name + "-prevhigh",OBJPROP_COLOR,clrRed);
          ObjectSetString(ChartID(),obBuffer[obIndex].name + "-prevhigh",OBJPROP_FONT,"Wingdings");
-         ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-prevhigh",OBJPROP_FONTSIZE,20);
+         ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-prevhigh",OBJPROP_FONTSIZE,30);
         }
 
       ObjectCreate(0,obBuffer[obIndex].name + "-mitiline",OBJ_TREND,0,
