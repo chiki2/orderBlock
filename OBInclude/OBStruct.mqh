@@ -44,6 +44,7 @@ struct orderBlock
    double            takeProfit;
    double            stopLoss;
 
+  
    void              init(string myName,int myIndex, datetime startT,
                           double highP,double lowP, double OBBdy, double lastCandlesWick, bool bear = false,
                           long oC = clrBlue)
@@ -69,15 +70,7 @@ struct orderBlock
       OBBody = OBBdy;
       OBWick = lastCandlesWick;
 
-      fibn027     = (isBear == false) ? lowPrice - inpStopLossPoints * Point() : highPrice + inpStopLossPoints * Point();
-      fib50       = getFibLevel(isBear, OBBody, OBWick, 0.50);
-      fib80       = getFibLevel(isBear, OBBody, OBWick, 0.80);
-      fib100       = getFibLevel(isBear, OBBody, OBWick, 1.00);
-      fib140       = getFibLevel(isBear, OBBody, OBWick, 1.40);
-      fib127      = getFibLevel(isBear, OBBody, OBWick, 1.27);
-      fib1618     = getFibLevel(isBear, OBBody, OBWick, 1.618);
-      fib200      = getFibLevel(isBear, OBBody, OBWick, 2.0);
-      fib23812    = getFibLevel(isBear, OBBody, OBWick, 2.3812);
+      getFibLevels(myIndex);
 
       cross127    = false;
       cross161    = false;

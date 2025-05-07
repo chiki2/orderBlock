@@ -156,8 +156,11 @@ void  DrawOB(int obIndex = 0, int start = 0)
       ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-text",OBJPROP_COLOR,obBuffer[obIndex].OBcolor);
       ObjectSetInteger(0,obBuffer[obIndex].name,OBJPROP_FILL, false);
       ObjectSetString(ChartID(),obBuffer[obIndex].name + "-text",OBJPROP_TOOLTIP,
-                      "obhigh : " + DoubleToString(obBuffer[obIndex].highPrice) + "\n" +
-                      "oblow : " + DoubleToString(obBuffer[obIndex].lowPrice) + "\n");
+                      "obhigh : " + DoubleToString(obBuffer[obIndex].highPrice, 2) + "\n" +
+                      "oblow : " + DoubleToString(obBuffer[obIndex].lowPrice, 2) + "\n"   +
+                      "Cross BOS : " + (obBuffer[obIndex].isBOS ? "True" : "False" )+ "\n"   +
+                      "Is done : " + (obBuffer[obIndex].isDone ? "True" : "False" )+ "\n"   +
+                      "Did cross 50 : " + (obBuffer[obIndex].cross50 ? "True" : "False" ) + "\n");
 
 
       ObjectSetInteger(0,obBuffer[obIndex].name,OBJPROP_COLOR,obBuffer[obIndex].OBcolor);
