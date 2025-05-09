@@ -101,7 +101,7 @@ void  DrawOB(int obIndex = 0, int start = 0)
                       obBuffer[obIndex].lowLiquid);
         }
 
-      ObjectCreate(0,obBuffer[obIndex].name + "-50",OBJ_TREND,0,
+      ObjectCreate(0,obBuffer[obIndex].name + "-50-" + DoubleToString(fiboEntry),OBJ_TREND,0,
                    obBuffer[obIndex].startTime,
                    obBuffer[obIndex].fib50,
                    rA[3].time,
@@ -123,21 +123,21 @@ void  DrawOB(int obIndex = 0, int start = 0)
                    (obBuffer[obIndex].startTime + rA[3].time) / 2,
                    (obBuffer[obIndex].highPrice + obBuffer[obIndex].lowPrice) / 2);
       // Fibo 127
-      ObjectCreate(0,obBuffer[obIndex].name + "-fib127",OBJ_TREND,0,
+      ObjectCreate(0,obBuffer[obIndex].name + "-fib127-"+ DoubleToString(fibo1rstTP),OBJ_TREND,0,
                    obBuffer[obIndex].startTime,
                    obBuffer[obIndex].fib127,
                    (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
                    obBuffer[obIndex].fib127);
 
       // Fibo 161
-      ObjectCreate(0,obBuffer[obIndex].name + "-fib161",OBJ_TREND,0,
+      ObjectCreate(0,obBuffer[obIndex].name + "-fib161-"+ DoubleToString(fibo2ndTP),OBJ_TREND,0,
                    obBuffer[obIndex].startTime,
                    obBuffer[obIndex].fib1618,
                    (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
                    obBuffer[obIndex].fib1618);
 
       // Fibo 232
-      ObjectCreate(0,obBuffer[obIndex].name + "-fib232",OBJ_TREND,0,
+      ObjectCreate(0,obBuffer[obIndex].name + "-fib232-"+ DoubleToString(fibo3rdTP),OBJ_TREND,0,
                    obBuffer[obIndex].startTime,
                    obBuffer[obIndex].fib23812,
                    (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
@@ -173,14 +173,14 @@ void  DrawOB(int obIndex = 0, int start = 0)
       ObjectSetInteger(0,obBuffer[obIndex].name + "-ImVal",OBJPROP_COLOR, obBuffer[obIndex].OBcolor);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-lqLine",OBJPROP_COLOR, obBuffer[obIndex].OBcolor);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-lqLine",OBJPROP_STYLE, STYLE_DASH);
-      ObjectSetInteger(0,obBuffer[obIndex].name + "-50",OBJPROP_STYLE, STYLE_DASH);
-      ObjectSetInteger(0,obBuffer[obIndex].name + "-50",OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrCyan : obBuffer[obIndex].OBcolor);
-      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib127",OBJPROP_STYLE, STYLE_DASH);
-      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib127",OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrCyan : obBuffer[obIndex].OBcolor);
-      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib161",OBJPROP_STYLE, STYLE_DASH);
-      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib161",OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrBlueViolet : obBuffer[obIndex].OBcolor);
-      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib232",OBJPROP_STYLE, STYLE_DASH);
-      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib232",OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrGold : obBuffer[obIndex].OBcolor);
+      ObjectSetInteger(0,obBuffer[obIndex].name + "-50-"+ DoubleToString(fiboEntry),OBJPROP_STYLE, STYLE_DASH);
+      ObjectSetInteger(0,obBuffer[obIndex].name + "-50-"+ DoubleToString(fiboEntry),OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrCyan : obBuffer[obIndex].OBcolor);
+      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib127-"+ DoubleToString(fibo1rstTP),OBJPROP_STYLE, STYLE_DASH);
+      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib127-"+ DoubleToString(fibo1rstTP),OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrCyan : obBuffer[obIndex].OBcolor);
+      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib161-"+ DoubleToString(fibo2ndTP),OBJPROP_STYLE, STYLE_DASH);
+      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib161-"+ DoubleToString(fibo2ndTP),OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrBlueViolet : obBuffer[obIndex].OBcolor);
+      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib232-"+ DoubleToString(fibo3rdTP),OBJPROP_STYLE, STYLE_DASH);
+      ObjectSetInteger(0,obBuffer[obIndex].name + "-fib232-"+ DoubleToString(fibo3rdTP),OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrGold : obBuffer[obIndex].OBcolor);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-mitiline",OBJPROP_COLOR, obBuffer[obIndex].OBcolor);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-mitiline",OBJPROP_STYLE, STYLE_DASHDOTDOT);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-sl",OBJPROP_COLOR, clrWhite);
