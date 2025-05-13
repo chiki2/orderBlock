@@ -41,6 +41,9 @@ struct orderBlock
    int               parent;
    ulong             tradeTicket;
    ulong             revengeTicket;
+   ulong             lightBuzzTicket;
+   bool              dolightbuzzTrailing;
+   bool              isLightbuzz;
    bool              isrevenge;
    double            takeProfit;
    double            stopLoss;
@@ -59,9 +62,11 @@ struct orderBlock
       stars= 1; // because has minimal body
       isBear = bear;
       revengeTicket = 0;
+      lightBuzzTicket = 0;
       sweepRevenge= false;
       isMitigated = false;
       isImbalanced= false;
+      isLightbuzz = false;
       isDone=false;
       isBOS= false;
       DoTrailing = false;
