@@ -12,6 +12,8 @@
 void drawBreakLevel(string objName,datetime time1,double price1,
                     datetime time2,double price2,color clr,int direction)
   {
+   string txt = " Break   ";
+   string objNameDescr = objName + txt;
    if(ObjectFind(0,objName) < 0)
      {
       ObjectCreate(0,objName,OBJ_ARROWED_LINE,0,time1,price1,time2,price2);
@@ -22,8 +24,6 @@ void drawBreakLevel(string objName,datetime time1,double price1,
       ObjectSetInteger(0,objName,OBJPROP_COLOR,clr);
       ObjectSetInteger(0,objName,OBJPROP_WIDTH,2);
 
-      string txt = " Break   ";
-      string objNameDescr = objName + txt;
       ObjectCreate(0,objNameDescr,OBJ_TEXT,0,time2,price2);
       ObjectSetInteger(0,objNameDescr,OBJPROP_COLOR,clr);
       ObjectSetInteger(0,objNameDescr,OBJPROP_FONTSIZE,10);
@@ -58,98 +58,112 @@ void  DrawOB(int obIndex = 0, int start = 0)
       int i = obBuffer[obIndex].index;
 
       //create the new rectangle using candle3s low, starting at candle 2, using candle 1s high and ending at candle 0
-      ObjectCreate(0,obBuffer[obIndex].name,OBJ_RECTANGLE,0,
-                   obBuffer[obIndex].startTime,
-                   obBuffer[obIndex].highPrice,
-                   (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
-                   obBuffer[obIndex].lowPrice);
-
-      // prev high & prev low
-      if(obBuffer[obIndex].prevlowi != 0)
+      if(ObjectFind(0,obBuffer[obIndex].name) < 0)
         {
-         int barIndex = iBarShift(_Symbol, HTOB, obBuffer[obIndex].prevlowi, true);
-         ObjectCreate(0,obBuffer[obIndex].name + "-prevlow", OBJ_ARROW,0, obBuffer[obIndex].prevlowi, high(barIndex));
-         ObjectSetInteger(0,obBuffer[obIndex].name + "-prevlow",OBJPROP_ARROWCODE,234);
-         ObjectSetInteger(0,obBuffer[obIndex].name + "-prevlow",OBJPROP_COLOR,clrBlue);
-         ObjectSetString(ChartID(),obBuffer[obIndex].name + "-prevlow",OBJPROP_FONT,"Wingdings");
-         ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-prevlow",OBJPROP_FONTSIZE,30);
-        }
-      if(obBuffer[obIndex].prevhighi != 0)
-        {
-         int barIndex = iBarShift(_Symbol, HTOB, obBuffer[obIndex].prevhighi, true);
-         ObjectCreate(0,obBuffer[obIndex].name + "-prevhigh", OBJ_ARROW,0, obBuffer[obIndex].prevhighi, low(barIndex));
-         ObjectSetInteger(0,obBuffer[obIndex].name + "-prevhigh",OBJPROP_ARROWCODE,233);
-         ObjectSetInteger(0,obBuffer[obIndex].name + "-prevhigh",OBJPROP_COLOR,clrRed);
-         ObjectSetString(ChartID(),obBuffer[obIndex].name + "-prevhigh",OBJPROP_FONT,"Wingdings");
-         ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-prevhigh",OBJPROP_FONTSIZE,30);
-        }
-
-      ObjectCreate(0,obBuffer[obIndex].name + "-mitiline",OBJ_TREND,0,
-                   obBuffer[obIndex].startTime,
-                   obBuffer[obIndex].mitigatedLine,
-                   (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
-                   obBuffer[obIndex].mitigatedLine);
-
-      //draw liquidity line
-      if(obBuffer[obIndex].lowLiquid != 0.0)
-        {
-         // create imbalanced line
-         ObjectCreate(0,obBuffer[obIndex].name + "-lqLine",OBJ_TREND,0,
+         ObjectCreate(0,obBuffer[obIndex].name,OBJ_RECTANGLE,0,
                       obBuffer[obIndex].startTime,
-                      obBuffer[obIndex].lowLiquid,
+                      obBuffer[obIndex].highPrice,
                       (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
-                      obBuffer[obIndex].lowLiquid);
+                      obBuffer[obIndex].lowPrice);
+
+         // prev high & prev low
+         if(obBuffer[obIndex].prevlowi != 0)
+           {
+            int barIndex = iBarShift(_Symbol, HTOB, obBuffer[obIndex].prevlowi, true);
+            ObjectCreate(0,obBuffer[obIndex].name + "-prevlow", OBJ_ARROW,0, obBuffer[obIndex].prevlowi, high(barIndex));
+            ObjectSetInteger(0,obBuffer[obIndex].name + "-prevlow",OBJPROP_ARROWCODE,234);
+            ObjectSetInteger(0,obBuffer[obIndex].name + "-prevlow",OBJPROP_COLOR,clrBlue);
+            ObjectSetString(ChartID(),obBuffer[obIndex].name + "-prevlow",OBJPROP_FONT,"Wingdings");
+            ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-prevlow",OBJPROP_FONTSIZE,30);
+           }
+         if(obBuffer[obIndex].prevhighi != 0)
+           {
+            int barIndex = iBarShift(_Symbol, HTOB, obBuffer[obIndex].prevhighi, true);
+            ObjectCreate(0,obBuffer[obIndex].name + "-prevhigh", OBJ_ARROW,0, obBuffer[obIndex].prevhighi, low(barIndex));
+            ObjectSetInteger(0,obBuffer[obIndex].name + "-prevhigh",OBJPROP_ARROWCODE,233);
+            ObjectSetInteger(0,obBuffer[obIndex].name + "-prevhigh",OBJPROP_COLOR,clrRed);
+            ObjectSetString(ChartID(),obBuffer[obIndex].name + "-prevhigh",OBJPROP_FONT,"Wingdings");
+            ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-prevhigh",OBJPROP_FONTSIZE,30);
+           }
+
+         if(ObjectFind(0,obBuffer[obIndex].name + "-mitiline") < 0)
+           {
+            ObjectCreate(0,obBuffer[obIndex].name + "-mitiline",OBJ_TREND,0,
+                         obBuffer[obIndex].startTime,
+                         obBuffer[obIndex].mitigatedLine,
+                         (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
+                         obBuffer[obIndex].mitigatedLine);
+           }
+
+
+         if(ObjectFind(0,obBuffer[obIndex].name + "-50-") < 0)
+           {
+            ObjectCreate(0,obBuffer[obIndex].name + "-50-" + DoubleToString(fiboEntry),OBJ_TREND,0,
+                         obBuffer[obIndex].startTime,
+                         obBuffer[obIndex].fib50,
+                         rA[3].time,
+                         obBuffer[obIndex].fib50);
+           }
+         if(obBuffer[obIndex].isImbalanced == true)
+           {
+            // create imbalanced line
+            if(ObjectFind(0,obBuffer[obIndex].name + "-ImLine") < 0)
+              {
+               ObjectCreate(0,obBuffer[obIndex].name + "-ImLine",OBJ_TREND,0,
+                            obBuffer[obIndex].startTime,
+                            obBuffer[obIndex].imbalancePrice,
+                            (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
+                            obBuffer[obIndex].imbalancePrice);
+               ObjectCreate(0,obBuffer[obIndex].name + "-ImVal", OBJ_TEXT, 0,
+                            (obBuffer[obIndex].startTime + rA[3].time) / 2,
+                            (obBuffer[obIndex].imbalancePrice + obBuffer[obIndex].highPrice) / 2);
+              }
+           }
+         if(ObjectFind(0,obBuffer[obIndex].name + "-text") < 0)
+           {
+            ObjectCreate(0,obBuffer[obIndex].name + "-text", OBJ_TEXT, 0,
+                         (obBuffer[obIndex].startTime + rA[3].time) / 2,
+                         (obBuffer[obIndex].highPrice + obBuffer[obIndex].lowPrice) / 2);
+           }
+         // Fibo 127
+         if(ObjectFind(0,obBuffer[obIndex].name + "-fib127-") < 0)
+           {
+            ObjectCreate(0,obBuffer[obIndex].name + "-fib127-"+ DoubleToString(fibo1rstTP),OBJ_TREND,0,
+                         obBuffer[obIndex].startTime,
+                         obBuffer[obIndex].fib127,
+                         (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
+                         obBuffer[obIndex].fib127);
+           }
+         // Fibo 161
+         if(ObjectFind(0,obBuffer[obIndex].name + "-fib161-") < 0)
+           {
+            ObjectCreate(0,obBuffer[obIndex].name + "-fib161-"+ DoubleToString(fibo2ndTP),OBJ_TREND,0,
+                         obBuffer[obIndex].startTime,
+                         obBuffer[obIndex].fib1618,
+                         (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
+                         obBuffer[obIndex].fib1618);
+           }
+         // Fibo 232
+         if(ObjectFind(0,obBuffer[obIndex].name + "-fib232-") < 0)
+           {
+            ObjectCreate(0,obBuffer[obIndex].name + "-fib232-"+ DoubleToString(fibo3rdTP),OBJ_TREND,0,
+                         obBuffer[obIndex].startTime,
+                         obBuffer[obIndex].fib23812,
+                         (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
+                         obBuffer[obIndex].fib23812);
+           }
+
+         // Fibo SL
+         if(ObjectFind(0,obBuffer[obIndex].name + "-sl") < 0)
+           {
+            ObjectCreate(0,obBuffer[obIndex].name + "-sl",OBJ_TREND,0,
+                         obBuffer[obIndex].startTime,
+                         obBuffer[obIndex].stopLoss,
+                         (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
+                         obBuffer[obIndex].stopLoss);
+           }
         }
-
-      ObjectCreate(0,obBuffer[obIndex].name + "-50-" + DoubleToString(fiboEntry),OBJ_TREND,0,
-                   obBuffer[obIndex].startTime,
-                   obBuffer[obIndex].fib50,
-                   rA[3].time,
-                   obBuffer[obIndex].fib50);
-
-      if(obBuffer[obIndex].isImbalanced == true)
-        {
-         // create imbalanced line
-         ObjectCreate(0,obBuffer[obIndex].name + "-ImLine",OBJ_TREND,0,
-                      obBuffer[obIndex].startTime,
-                      obBuffer[obIndex].imbalancePrice,
-                      (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
-                      obBuffer[obIndex].imbalancePrice);
-         ObjectCreate(0,obBuffer[obIndex].name + "-ImVal", OBJ_TEXT, 0,
-                      (obBuffer[obIndex].startTime + rA[3].time) / 2,
-                      (obBuffer[obIndex].imbalancePrice + obBuffer[obIndex].highPrice) / 2);
-        }
-      ObjectCreate(0,obBuffer[obIndex].name + "-text", OBJ_TEXT, 0,
-                   (obBuffer[obIndex].startTime + rA[3].time) / 2,
-                   (obBuffer[obIndex].highPrice + obBuffer[obIndex].lowPrice) / 2);
-      // Fibo 127
-      ObjectCreate(0,obBuffer[obIndex].name + "-fib127-"+ DoubleToString(fibo1rstTP),OBJ_TREND,0,
-                   obBuffer[obIndex].startTime,
-                   obBuffer[obIndex].fib127,
-                   (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
-                   obBuffer[obIndex].fib127);
-
-      // Fibo 161
-      ObjectCreate(0,obBuffer[obIndex].name + "-fib161-"+ DoubleToString(fibo2ndTP),OBJ_TREND,0,
-                   obBuffer[obIndex].startTime,
-                   obBuffer[obIndex].fib1618,
-                   (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
-                   obBuffer[obIndex].fib1618);
-
-      // Fibo 232
-      ObjectCreate(0,obBuffer[obIndex].name + "-fib232-"+ DoubleToString(fibo3rdTP),OBJ_TREND,0,
-                   obBuffer[obIndex].startTime,
-                   obBuffer[obIndex].fib23812,
-                   (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
-                   obBuffer[obIndex].fib23812);
-
-
-      // Fibo SL
-      ObjectCreate(0,obBuffer[obIndex].name + "-sl",OBJ_TREND,0,
-                   obBuffer[obIndex].startTime,
-                   obBuffer[obIndex].stopLoss,
-                   (obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime,
-                   obBuffer[obIndex].stopLoss);
+      ObjectSetInteger(0,obBuffer[obIndex].name,OBJPROP_TIME,1,(obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime);
       ObjectSetString(ChartID(),obBuffer[obIndex].name + "-text",OBJPROP_TEXT,getStars(obIndex));
       ObjectSetString(ChartID(),obBuffer[obIndex].name + "-text",OBJPROP_FONT,"Wingdings");
       ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-text",OBJPROP_FONTSIZE,20);
@@ -158,34 +172,42 @@ void  DrawOB(int obIndex = 0, int start = 0)
       ObjectSetString(ChartID(),obBuffer[obIndex].name + "-text",OBJPROP_TOOLTIP,
                       "obhigh : " + DoubleToString(obBuffer[obIndex].highPrice, 2) + "\n" +
                       "oblow : " + DoubleToString(obBuffer[obIndex].lowPrice, 2) + "\n"   +
-                      "Cross BOS : " + (obBuffer[obIndex].isBOS ? "True" : "False" )+ "\n"   +
-                      "Is done : " + (obBuffer[obIndex].isDone ? "True" : "False" )+ "\n"   +
-                      "Did cross 50 : " + (obBuffer[obIndex].cross50 ? "True" : "False" ) + "\n");
+                      "Cross BOS : " + (obBuffer[obIndex].isBOS ? "True" : "False")+ "\n"   +
+                      "Is done : " + (obBuffer[obIndex].isDone ? "True" : "False")+ "\n"   +
+                      "Did cross 50 : " + (obBuffer[obIndex].cross50 ? "True" : "False") + "\n");
+      ObjectSetInteger(0,obBuffer[obIndex].name+ "-text",OBJPROP_TIME,0,(obBuffer[obIndex].isMitigated == false) ? (obBuffer[obIndex].startTime + rA[3].time) / 2 : obBuffer[obIndex].mitigatedTime);
 
 
       ObjectSetInteger(0,obBuffer[obIndex].name,OBJPROP_COLOR,obBuffer[obIndex].OBcolor);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-ImLine",OBJPROP_COLOR, obBuffer[obIndex].OBcolor);
+      ObjectSetInteger(0,obBuffer[obIndex].name+ "-ImLine",OBJPROP_TIME,1,(obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime);
       ObjectSetString(ChartID(),obBuffer[obIndex].name + "-ImVal",OBJPROP_TEXT,"  " +DoubleToString(obBuffer[obIndex].imbalancedDist,2));
       ObjectSetString(ChartID(),obBuffer[obIndex].name + "-ImVal",OBJPROP_FONT,"Arial");
       ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-ImVal",OBJPROP_FONTSIZE,15);
       ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-ImVal",OBJPROP_COLOR,obBuffer[obIndex].OBcolor);
       ObjectSetInteger(0,obBuffer[obIndex].name,OBJPROP_COLOR,obBuffer[obIndex].OBcolor);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-ImVal",OBJPROP_COLOR, obBuffer[obIndex].OBcolor);
-      ObjectSetInteger(0,obBuffer[obIndex].name + "-lqLine",OBJPROP_COLOR, obBuffer[obIndex].OBcolor);
-      ObjectSetInteger(0,obBuffer[obIndex].name + "-lqLine",OBJPROP_STYLE, STYLE_DASH);
+      ObjectSetInteger(0,obBuffer[obIndex].name+ "-ImVal",OBJPROP_TIME,1,(obBuffer[obIndex].isMitigated == false) ? (obBuffer[obIndex].startTime + rA[3].time) / 2 : obBuffer[obIndex].mitigatedTime);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-50-"+ DoubleToString(fiboEntry),OBJPROP_STYLE, STYLE_DASH);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-50-"+ DoubleToString(fiboEntry),OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrCyan : obBuffer[obIndex].OBcolor);
+      ObjectSetInteger(0,obBuffer[obIndex].name+ "-50-"+ DoubleToString(fiboEntry),OBJPROP_TIME,1,(obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-fib127-"+ DoubleToString(fibo1rstTP),OBJPROP_STYLE, STYLE_DASH);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-fib127-"+ DoubleToString(fibo1rstTP),OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrCyan : obBuffer[obIndex].OBcolor);
+      ObjectSetInteger(0,obBuffer[obIndex].name+ "-fib127-"+ DoubleToString(fibo1rstTP),OBJPROP_TIME,1,(obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-fib161-"+ DoubleToString(fibo2ndTP),OBJPROP_STYLE, STYLE_DASH);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-fib161-"+ DoubleToString(fibo2ndTP),OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrBlueViolet : obBuffer[obIndex].OBcolor);
+      ObjectSetInteger(0,obBuffer[obIndex].name+ "-fib161-"+ DoubleToString(fibo2ndTP),OBJPROP_TIME,1,(obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-fib232-"+ DoubleToString(fibo3rdTP),OBJPROP_STYLE, STYLE_DASH);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-fib232-"+ DoubleToString(fibo3rdTP),OBJPROP_COLOR, obBuffer[obIndex].isMitigated == false ? clrGold : obBuffer[obIndex].OBcolor);
+      ObjectSetInteger(0,obBuffer[obIndex].name+ "-fib232-"+ DoubleToString(fibo3rdTP),OBJPROP_TIME,1,(obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-mitiline",OBJPROP_COLOR, obBuffer[obIndex].OBcolor);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-mitiline",OBJPROP_STYLE, STYLE_DASHDOTDOT);
+      ObjectSetInteger(0,obBuffer[obIndex].name+ "-mitiline",OBJPROP_TIME,1,(obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-sl",OBJPROP_COLOR, clrWhite);
       ObjectSetInteger(0,obBuffer[obIndex].name + "-sl",OBJPROP_STYLE, STYLE_DASHDOTDOT);
+      ObjectSetInteger(0,obBuffer[obIndex].name+ "-sl",OBJPROP_TIME,1,(obBuffer[obIndex].isMitigated == false) ? rA[3].time : obBuffer[obIndex].mitigatedTime);
      }
+
   }
 
 //+------------------------------------------------------------------+
@@ -312,3 +334,36 @@ void drawSwingPoint(string objName,datetime time,double price,int arrCode,
      }
    ChartRedraw(0);
   }
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
+//| Range breakout Draw horizontal lines for range high and low      |
+//+------------------------------------------------------------------+
+void DrawRangeLines(string baseName)
+  {
+// High line
+   string highName = baseName + "_High";
+   if(!ObjectCreate(0, highName, OBJ_HLINE, 0, 0, rangeHigh))
+     {
+      Print("Failed to create high line: ", GetLastError());
+      return;
+     }
+   ObjectSetInteger(0, highName, OBJPROP_COLOR, clrLime);
+   ObjectSetInteger(0, highName, OBJPROP_STYLE, STYLE_SOLID);
+   ObjectSetInteger(0, highName, OBJPROP_WIDTH, 1);
+   ObjectSetInteger(0, highName, OBJPROP_BACK, false);
+
+// Low line
+   string lowName = baseName + "_Low";
+   if(!ObjectCreate(0, lowName, OBJ_HLINE, 0, 0, rangeLow))
+     {
+      Print("Failed to create low line: ", GetLastError());
+      return;
+     }
+   ObjectSetInteger(0, lowName, OBJPROP_COLOR, clrRed);
+   ObjectSetInteger(0, lowName, OBJPROP_STYLE, STYLE_SOLID);
+   ObjectSetInteger(0, lowName, OBJPROP_WIDTH, 1);
+   ObjectSetInteger(0, lowName, OBJPROP_BACK, false);
+  }
+//+------------------------------------------------------------------+
