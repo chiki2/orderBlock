@@ -353,7 +353,20 @@ void DrawRangeLines(string baseName)
    ObjectSetInteger(0, highName, OBJPROP_STYLE, STYLE_SOLID);
    ObjectSetInteger(0, highName, OBJPROP_WIDTH, 1);
    ObjectSetInteger(0, highName, OBJPROP_BACK, false);
-
+   
+// High Max line
+   if ( rm == RANGE_SIZE_ZONE){
+      string MaxhighName = baseName + "_High_Max";
+      if(!ObjectCreate(0, MaxhighName , OBJ_HLINE, 0, 0, maxPriceRange))
+        {
+         Print("Failed to create high line: ", GetLastError());
+         return;
+        }
+      ObjectSetInteger(0, MaxhighName , OBJPROP_COLOR, clrLime);
+      ObjectSetInteger(0, MaxhighName , OBJPROP_STYLE, STYLE_DASH);
+      ObjectSetInteger(0, MaxhighName , OBJPROP_WIDTH, 1);
+      ObjectSetInteger(0, MaxhighName, OBJPROP_BACK, false);
+   }
 // Low line
    string lowName = baseName + "_Low";
    if(!ObjectCreate(0, lowName, OBJ_HLINE, 0, 0, rangeLow))
