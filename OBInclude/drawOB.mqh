@@ -380,3 +380,16 @@ void DrawRangeLines(string baseName)
    ObjectSetInteger(0, lowName, OBJPROP_BACK, false);
   }
 //+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Draw consolidation range rectangle                                 |
+//+------------------------------------------------------------------+
+void DrawRangeRectangle()
+{
+   ObjectDelete(0, rectangleName);
+   ObjectCreate(0, rectangleName, OBJ_RECTANGLE, 0, CrangeStartTime, CrangeHigh, CrangeEndTime, CrangeLow);
+   ObjectSetInteger(0, rectangleName, OBJPROP_COLOR, clrBlue);
+   ObjectSetInteger(0, rectangleName, OBJPROP_STYLE, STYLE_SOLID);
+   ObjectSetInteger(0, rectangleName, OBJPROP_WIDTH, 2);
+   ObjectSetInteger(0, rectangleName, OBJPROP_FILL, false);
+}
