@@ -169,6 +169,7 @@ void  DrawOB(int obIndex = 0, int start = 0)
       ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-text",OBJPROP_FONTSIZE,20);
       ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-text",OBJPROP_COLOR,obBuffer[obIndex].OBcolor);
       ObjectSetInteger(0,obBuffer[obIndex].name,OBJPROP_FILL, false);
+      ObjectSetInteger(ChartID(),obBuffer[obIndex].name + "-text",OBJPROP_ZORDER,0);
       ObjectSetString(ChartID(),obBuffer[obIndex].name + "-text",OBJPROP_TOOLTIP,
                       "obhigh : " + DoubleToString(obBuffer[obIndex].highPrice, 2) + "\n" +
                       "oblow : " + DoubleToString(obBuffer[obIndex].lowPrice, 2) + "\n"   +
@@ -353,20 +354,21 @@ void DrawRangeLines(string baseName)
    ObjectSetInteger(0, highName, OBJPROP_STYLE, STYLE_SOLID);
    ObjectSetInteger(0, highName, OBJPROP_WIDTH, 1);
    ObjectSetInteger(0, highName, OBJPROP_BACK, false);
-   
+
 // High Max line
-   if ( rm == RANGE_SIZE_ZONE){
+   if(rm == RANGE_SIZE_ZONE)
+     {
       string MaxhighName = baseName + "_High_Max";
-      if(!ObjectCreate(0, MaxhighName , OBJ_HLINE, 0, 0, maxPriceRange))
+      if(!ObjectCreate(0, MaxhighName, OBJ_HLINE, 0, 0, maxPriceRange))
         {
          Print("Failed to create high line: ", GetLastError());
          return;
         }
-      ObjectSetInteger(0, MaxhighName , OBJPROP_COLOR, clrLime);
-      ObjectSetInteger(0, MaxhighName , OBJPROP_STYLE, STYLE_DASH);
-      ObjectSetInteger(0, MaxhighName , OBJPROP_WIDTH, 1);
+      ObjectSetInteger(0, MaxhighName, OBJPROP_COLOR, clrLime);
+      ObjectSetInteger(0, MaxhighName, OBJPROP_STYLE, STYLE_DASH);
+      ObjectSetInteger(0, MaxhighName, OBJPROP_WIDTH, 1);
       ObjectSetInteger(0, MaxhighName, OBJPROP_BACK, false);
-   }
+     }
 // Low line
    string lowName = baseName + "_Low";
    if(!ObjectCreate(0, lowName, OBJ_HLINE, 0, 0, rangeLow))
@@ -378,6 +380,21 @@ void DrawRangeLines(string baseName)
    ObjectSetInteger(0, lowName, OBJPROP_STYLE, STYLE_SOLID);
    ObjectSetInteger(0, lowName, OBJPROP_WIDTH, 1);
    ObjectSetInteger(0, lowName, OBJPROP_BACK, false);
+
+// low Max line
+   if(rm == RANGE_SIZE_ZONE)
+     {
+      string MaxLowName = baseName + "_Low_Max";
+      if(!ObjectCreate(0, MaxLowName, OBJ_HLINE, 0, 0, maxPriceRangeLow))
+        {
+         Print("Failed to create high line: ", GetLastError());
+         return;
+        }
+      ObjectSetInteger(0, MaxLowName, OBJPROP_COLOR, clrRed);
+      ObjectSetInteger(0, MaxLowName, OBJPROP_STYLE, STYLE_DASH);
+      ObjectSetInteger(0, MaxLowName, OBJPROP_WIDTH, 1);
+      ObjectSetInteger(0, MaxLowName, OBJPROP_BACK, false);
+     }
   }
 //+------------------------------------------------------------------+
 
@@ -385,11 +402,13 @@ void DrawRangeLines(string baseName)
 //| Draw consolidation range rectangle                                 |
 //+------------------------------------------------------------------+
 void DrawRangeRectangle()
-{
+  {
    ObjectDelete(0, rectangleName);
    ObjectCreate(0, rectangleName, OBJ_RECTANGLE, 0, CrangeStartTime, CrangeHigh, CrangeEndTime, CrangeLow);
    ObjectSetInteger(0, rectangleName, OBJPROP_COLOR, clrBlue);
    ObjectSetInteger(0, rectangleName, OBJPROP_STYLE, STYLE_SOLID);
    ObjectSetInteger(0, rectangleName, OBJPROP_WIDTH, 2);
    ObjectSetInteger(0, rectangleName, OBJPROP_FILL, false);
-}
+  }
+
+//+------------------------------------------------------------------+
