@@ -343,6 +343,30 @@ void drawSwingPoint(string objName,datetime time,double price,int arrCode,
 //+------------------------------------------------------------------+
 void DrawRangeLines(string baseName)
   {
+  
+// start vertical line rangeStart
+   string startName = baseName + "_start";
+   if(!ObjectCreate(0, startName, OBJ_VLINE, 0, rangeStart, 0))
+     {
+      Print("Failed to create high line: ", GetLastError());
+      return;
+     }
+   ObjectSetInteger(0, startName, OBJPROP_COLOR, clrBlueViolet);
+   ObjectSetInteger(0, startName, OBJPROP_STYLE, STYLE_SOLID);
+   ObjectSetInteger(0, startName, OBJPROP_WIDTH, 1);
+   ObjectSetInteger(0, startName, OBJPROP_BACK, false);
+// end vertical line  rangeEnd
+   string endName = baseName + "_start";
+   if(!ObjectCreate(0, endName, OBJ_VLINE, 0, rangeEnd, 0))
+     {
+      Print("Failed to create high line: ", GetLastError());
+      return;
+     }
+   ObjectSetInteger(0, endName, OBJPROP_COLOR, clrBlueViolet);
+   ObjectSetInteger(0, endName, OBJPROP_STYLE, STYLE_SOLID);
+   ObjectSetInteger(0, endName, OBJPROP_WIDTH, 1);
+   ObjectSetInteger(0, endName, OBJPROP_BACK, false);
+
 // High line
    string highName = baseName + "_High";
    if(!ObjectCreate(0, highName, OBJ_HLINE, 0, 0, rangeHigh))
