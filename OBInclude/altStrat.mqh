@@ -25,6 +25,26 @@
 //   string ErrorDescription(int error_code);
 // #import
 //+------------------------------------------------------------------+
+enum rangeMode
+  {
+   RANGE_SIZE_ZONE, //Range size above Range high as limit
+   RANGE_STOPLOSS  //Each trade keep range size as stoploss
+  };
+
+enum rangeOrder
+  {
+   BUY_ONLY, // Authorize buy order only
+   SELL_ONLY,  // Authorize sell order only
+   BUY_AND_SELL // Authorize both buy and sell order
+  };
+
+enum strat
+  {
+   STRAT_ORDER_BLOCK, // Order Block
+   STRAT_OPEN_RANGE, // Open range breakout
+   STRAT_RANGEBREAKOUT // Range Breakout
+  };
+
 input group             "Open Range Breakout"
 input bool enableRangeBK = false; // enable range breakout
 input rangeOrder ro      = BUY_ONLY; // buy only
@@ -44,8 +64,6 @@ input rangeMode rm = RANGE_SIZE_ZONE;
 input group             "Consolidation Breakout"
 input bool enableConsolidationBK = false; // enable range breakout
 input int LookbackPeriod = 80;          // Lookback period for range detection
-input double ATR_Threshold = 1.5;    // ATR threshold for consolidation
-input int ATR_Period = 14;              // ATR period
 input double ConsoLotSize = 0.01;             // Lot size for trading
 input double RiskRewardRatio = 2.0;     // Risk-reward ratio for TP
 input int MaxBarsForRectangle = 50;     // Max bars for rectangle duration
@@ -65,7 +83,6 @@ datetime CrangeStartTime, CrangeEndTime;
 bool inConsolidation = false;
 bool positionOpened = false;
 string rectangleName = "ConsolidationRange";
-double atr[];
 
 //+------------------------------------------------------------------+
 //| Range breakout Check for breakout and place trades               |
@@ -114,9 +131,7 @@ int CheckBreakouts()
       tp = adjusted.takeProfit;
       sl = adjusted.stopLoss;
 
-      if(filterPositionByStrat(STRAT_OPEN_RANGE) < MathMax(maxorderAmount, 1) &&
-         maxorderAmount < 30 /*&&
-         RSI < 65 && RSI > 20*/)
+      if(RSI < 65 && RSI > 20)
         {
          obj_Trade.BuyLimit(checkVolume(rangeLotSize),SymbolInfoDouble(_Symbol,  SYMBOL_ASK),_Symbol,sl, tp,ORDER_TIME_DAY,0,"Range Trade");
          sendNotif("Range 0.01 Buy @" + DoubleToString(SymbolInfoDouble(_Symbol,  SYMBOL_ASK)) + " on " + _Symbol);
@@ -156,9 +171,7 @@ int CheckBreakouts()
       sl = adjusted.stopLoss;
 
 
-      if(filterPositionByStrat(STRAT_OPEN_RANGE) < MathMax(maxorderAmount, 1) &&
-         maxorderAmount < 30 /*&&
-         RSI < 65 && RSI > 20*/)
+      if(RSI < 65 && RSI > 20)
         {
          obj_Trade.SellLimit(0.01,SymbolInfoDouble(_Symbol,  SYMBOL_BID),_Symbol,sl, tp,ORDER_TIME_DAY,0,"Range Trade");
          Print("Sell range trade placed: Price=", currentPrice, ", SL=", sl, ", TP=", tp);
@@ -193,99 +206,3 @@ double CalculateLotSize(double stopLossPips)
   }
 //+------------------------------------------------------------------+
 
-
-//+------------------------------------------------------------------+
-//|                           Lightbuzz call                         |
-//+------------------------------------------------------------------+
-void LightBuzzOrder(int i = 0)
-  {
-   if(enableLightBuzz == false)
-     {return;}
-
-   if(timeToTrade() == false)
-     {
-      return;
-     }
-
-
-   int barIndex            = iBarShift(_Symbol, HTOB, obBuffer[i].startTime, true);
-   double bidPrice         = SymbolInfoDouble(_Symbol, SYMBOL_BID); // bear
-   double askPrice         = SymbolInfoDouble(_Symbol, SYMBOL_ASK); // bull
-
-   if(
-      obBuffer[i].isBear == false &&
-      obBuffer[i].lightBuzzTicket == 0 &&
-      obBuffer[i].fib23812 < bidPrice &&
-      obBuffer[i].isLightbuzz == false &&
-      obBuffer[i].OBcolor != clrPurple &&
-
-      barIndex <= LightBuzzCandlesDetect)
-     {
-      Print("Lighbuzzzzz Sell ! ");
-      obj_Trade.Buy(lotsizeCalculation(),_Symbol, bidPrice, bidPrice - 30 * Point(), 0,"lightbuzz trade");
-      obBuffer[i].isLightbuzz = true;
-      obBuffer[i].lightBuzzTicket = obj_Trade.ResultOrder();
-      obBuffer[i].dolightbuzzTrailing = true;
-
-     }
-   if(
-      obBuffer[i].isBear == true &&
-      obBuffer[i].lightBuzzTicket == 0 &&
-      obBuffer[i].fib23812 > askPrice &&
-      obBuffer[i].isLightbuzz == false &&
-      obBuffer[i].OBcolor != clrPurple &&
-      barIndex <= LightBuzzCandlesDetect)
-     {
-      Print("Lighbuzzzzz buy ! ");
-      obj_Trade.Sell(lotsizeCalculation(),_Symbol, askPrice, askPrice + 30 * Point(), 0,"lightbuzz trade");
-      obBuffer[i].isLightbuzz = true;
-      obBuffer[i].lightBuzzTicket = obj_Trade.ResultOrder();
-      obBuffer[i].dolightbuzzTrailing = true;
-     }
-  }
-
-
-
-//+------------------------------------------------------------------+
-//|  Do revenge trade                                                |
-//+------------------------------------------------------------------+
-void doRevengeTrade(int i)
-  {
-   if(enableRevengeTrailingStop == false)
-      return;
-
-   if(timeToTrade() == false)
-     {
-      return;
-     }
-
-
-   double bidPrice         = SymbolInfoDouble(_Symbol, SYMBOL_BID); // bear
-   double askPrice         = SymbolInfoDouble(_Symbol, SYMBOL_ASK); // bull
-   if(
-      obBuffer[i].isBear == false &&
-      obBuffer[i].OBcolor != clrPurple &&
-      obBuffer[i].revengeTicket == 0 &&
-      obBuffer[i].sweepRevenge == true &&
-      obBuffer[i].startTime > TimeCurrent() - outdatedOB * 3600)
-     {
-      Print("Revenge sell ! ");
-      obj_Trade.Sell(lotsizeCalculation(),_Symbol, askPrice, askPrice + 300 * Point(), 0,"revenge trade");
-      obBuffer[i].isrevenge = true;
-      obBuffer[i].revengeTicket = obj_Trade.ResultOrder();
-      obBuffer[i].DoRevengeTrailing = true;
-
-     }
-   if(obBuffer[i].isBear == true &&
-      obBuffer[i].OBcolor != clrPurple &&
-      obBuffer[i].revengeTicket == 0 &&
-      obBuffer[i].sweepRevenge == true &&
-      obBuffer[i].startTime > TimeCurrent() - outdatedOB * 3600)
-     {
-      Print("Revenge buy ! ");
-      obj_Trade.Buy(lotsizeCalculation(),_Symbol, bidPrice, bidPrice - 300 * Point(), 0,"revenge trade");
-      obBuffer[i].isrevenge = true;
-      obBuffer[i].revengeTicket = obj_Trade.ResultOrder();
-      obBuffer[i].DoRevengeTrailing = true;
-     }
-  }
