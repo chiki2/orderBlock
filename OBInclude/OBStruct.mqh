@@ -20,9 +20,11 @@ struct orderBlock
    bool              DoTrailing;
    bool              DoRevengeTrailing;
    bool              sweepRevenge;
+   bool              HasSweepBefore;
    datetime          mitigatedTime;
    double            mitigatedLine;
    bool              isImbalanced;
+   bool              ImbalancedFilled;
    double            imbalancedDist;
    bool              isBear;
    int               stars;
@@ -62,6 +64,7 @@ struct orderBlock
       stars= 1; // because has minimal body
       isBear = bear;
       revengeTicket = 0;
+      ImbalancedFilled = false;
       lightBuzzTicket = 0;
       sweepRevenge= false;
       isMitigated = false;

@@ -85,10 +85,112 @@ bool positionOpened = false;
 string rectangleName = "ConsolidationRange";
 
 //+------------------------------------------------------------------+
+//| Update the open range high and low, draw visual objects           |
+//+------------------------------------------------------------------+
+void UpdateRange(datetime currentPrice)
+  {
+   ObjectsDeleteAll(0,objectPrefix);
+
+// Validate time range
+   if(rangeStart >= rangeEnd || rangeStart == 0 || rangeEnd == 0)
+     {
+      Print("Invalid range times: Start=", rangeStart, ", End=", rangeEnd);
+      return;
+     }
+
+// Get bar indices for the range period
+   int startShift = iBarShift(_Symbol, _Period, rangeStart, true);
+   int endShift = iBarShift(_Symbol, _Period, rangeEnd, true);
+
+// Check if shifts are valid
+   if(startShift < 0 || endShift < 0 || startShift <= endShift)
+     {
+      Print("Invalid bar shifts: StartShift=", startShift, ", EndShift=", endShift);
+      return;
+     }
+
+// Calculate number of bars in the range
+   int bars = startShift - endShift + 1;
+   if(bars <= 0)
+     {
+      Print("No bars found in range: ", TimeToString(rangeStart), " to ", TimeToString(rangeEnd));
+      return;
+     }
+
+// Calculate range high and low
+   rangeHigh = iHigh(_Symbol, _Period, iHighest(_Symbol, _Period, MODE_HIGH, bars, endShift));
+   rangeLow = iLow(_Symbol, _Period, iLowest(_Symbol, _Period, MODE_LOW, bars, endShift));
+
+   if(rangeHigh > rangeLow)
+     {
+      rangeSet = true;
+      Print("Range set: High=", rangeHigh, ", Low=", rangeLow, ", Time=", TimeToString(rangeStart), ", Range end=", TimeToString(rangeEnd));
+
+      // Draw visual objects if enabled
+      string objName = objectPrefix + TimeToString(rangeStart, TIME_DATE|TIME_MINUTES);
+      maxPriceRange = (rangeHigh + (rangeHigh - rangeLow));
+      maxPriceRangeLow = (rangeLow - (rangeHigh - rangeLow));
+      DrawRangeLines(objName);
+     }
+  }
+
+
+//+------------------------------------------------------------------+
+//| Range breakout Process logic on new bar                          |
+//+------------------------------------------------------------------+
+void RangeBreakout()
+  {
+   if(enableRangeBK == false)
+      return;
+
+
+
+   MqlDateTime mdt;
+   datetime currentTime = TimeGMT(mdt);
+// Adjust range times for the current day
+   string today = TimeToString(currentTime, TIME_DATE);
+   rangeStart = StringToTime(today + " " + ((Inp_Hour < 10) ? "0" + IntegerToString(Inp_Hour) : IntegerToString(Inp_Hour)) + ":" + ((Inp_Minute < 10) ? "0" + IntegerToString(Inp_Minute) : IntegerToString(Inp_Minute)));
+   rangeEnd = rangeStart + RangeMinutes * 60;
+   dayEnd = StringToTime(today + " " + DayEndTime);
+
+// Step 1: Set the open range
+   if(currentTime >= rangeStart  && rangeSet == false)
+     {
+      UpdateRange(currentTime);
+     }
+   else
+     {
+
+      if(currentTime > rangeEnd && rangeSet == true)
+        {
+         // Step 2: Check for breakouts if range is set and no position is open
+         CheckBreakouts();
+        }
+     }
+
+   ClosePositiveTrades();
+
+// Reset range and objects for the next day
+   if(currentTime > dayEnd)
+     {
+      rangeSet = false;
+      rangeHigh = 0;
+      rangeLow = 0;
+     }
+  }
+//+------------------------------------------------------------------+
+
+
+//+------------------------------------------------------------------+
 //| Range breakout Check for breakout and place trades               |
 //+------------------------------------------------------------------+
 int CheckBreakouts()
   {
+     rangeStart = StringToTime(TimeToString(TimeCurrent(), TIME_DATE) + " " + IntegerToString(Inp_Hour) + ":" + IntegerToString(Inp_Minute));
+   rangeEnd = rangeStart + RangeMinutes * 60;
+   dayEnd = StringToTime(TimeToString(TimeCurrent(), TIME_DATE) + " " + DayEndTime);
+   RangeBreakout();
+
    double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
 
 // Calculate lot size based on risk
@@ -206,3 +308,213 @@ double CalculateLotSize(double stopLossPips)
   }
 //+------------------------------------------------------------------+
 
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void detectConsolidationRange()
+  {
+   double ATR_Threshold = 1.2;
+   if(enableConsolidationBK == false)
+     {
+      return ;
+     }
+// Get current ATR
+   ArraySetAsSeries(atr, true);
+   int atrHandle = iATR(_Symbol, _Period, ATR_Period);
+   if(CopyBuffer(atrHandle, 0, 0, 1, atr) <= 0)
+     {
+      Print("No valid data for ATR");
+      return;
+     }
+
+// Get price data
+   double high[], low[], close[];
+   ArraySetAsSeries(high, true);
+   ArraySetAsSeries(low, true);
+   ArraySetAsSeries(close, true);
+   if(CopyHigh(_Symbol, _Period, 0, LookbackPeriod, high) <= 0 ||
+      CopyLow(_Symbol, _Period, 0, LookbackPeriod, low) <= 0 ||
+      CopyClose(_Symbol, _Period, 1, 1, close) <= 0)
+     {
+      return;
+     }
+
+// Detect consolidation
+   if(atr[0] < ATR_Threshold &&
+      inConsolidation == false &&
+      atr[0] > 0)
+     {
+      Print("Consolidation detected");
+      // Define range
+      CrangeHigh = high[ArrayMaximum(high, 0, LookbackPeriod)];
+      CrangeLow = low[ArrayMinimum(low, 0, LookbackPeriod)];
+      CrangeStartTime = TimeCurrent() - (LookbackPeriod * PeriodSeconds(_Period));
+      CrangeEndTime = TimeCurrent();
+
+      // Draw rectangle
+      DrawRangeRectangle();
+      inConsolidation = true;
+     }
+   else
+      if(atr[0] >= ATR_Threshold && inConsolidation == true)
+        {
+         Print("Consolidation invalid");
+         // Remove rectangle if no longer in consolidation
+         ObjectDelete(0, rectangleName);
+         inConsolidation = false;
+        }
+
+// Check for breakout
+   if(inConsolidation == true && positionOpened == false)
+     {
+      double currentPrice = close[0];
+      double CrangeSize = CrangeHigh - CrangeLow;
+      double CrangeSizePoint = CrangeSize / SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+      double protectSL  = inpStopLossPoints * SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+      double slDistance = /*(CrangeSizePoint > inpStopLossPoints) ? protectSL  : */CrangeSize ;
+      double tpDistance = CrangeSize * RiskRewardRatio;
+
+
+
+
+      // Bullish breakout
+      if(currentPrice > CrangeHigh &&
+         currentPrice > ema[1]
+         /*&&
+         RSI < 60 && RSI > 20*/)
+        {
+         double sl = currentPrice - slDistance;
+         double tp = currentPrice + tpDistance;
+
+         StopLevels adjusted = AdjustStopLevels(currentPrice, sl, tp, true);
+         tp = adjusted.takeProfit;
+         sl = adjusted.stopLoss;
+
+         obj_Trade.Buy(checkVolume(ConsoLotSize), _Symbol, 0, sl, tp, "Range Consolidation");
+         sendNotif("Consolidation Range 0.01 Buy @" + DoubleToString(currentPrice) + " on " + _Symbol);
+         ObjectDelete(0, rectangleName);
+         inConsolidation = false;
+        }
+      // Bearish breakout
+      else
+         if(currentPrice < CrangeLow &&
+            currentPrice < ema[1]
+            /*&&
+               RSI > 60 && RSI > 40*/)
+           {
+            double sl = currentPrice + slDistance;
+            double tp = currentPrice - tpDistance;
+
+            StopLevels adjusted = AdjustStopLevels(currentPrice, sl, tp, false);
+            tp = adjusted.takeProfit;
+            sl = adjusted.stopLoss;
+
+            obj_Trade.Sell(checkVolume(ConsoLotSize), _Symbol, 0, sl, tp, "Range Consolidation");
+            sendNotif("Consolidation Range 0.01 Sell @" + DoubleToString(currentPrice) + " on " + _Symbol);
+            ObjectDelete(0, rectangleName);
+            inConsolidation = false;
+           }
+     }
+  }
+
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Range breakout Draw horizontal lines for range high and low      |
+//+------------------------------------------------------------------+
+void DrawRangeLines(string baseName)
+  {
+
+// start vertical line rangeStart
+   string startName = baseName + "_start";
+   if(!ObjectCreate(0, startName, OBJ_VLINE, 0, rangeStart, 0))
+     {
+      Print("Failed to create high line: ", GetLastError());
+      return;
+     }
+   ObjectSetInteger(0, startName, OBJPROP_COLOR, clrBlueViolet);
+   ObjectSetInteger(0, startName, OBJPROP_STYLE, STYLE_SOLID);
+   ObjectSetInteger(0, startName, OBJPROP_WIDTH, 1);
+   ObjectSetInteger(0, startName, OBJPROP_BACK, false);
+// end vertical line  rangeEnd
+   string endName = baseName + "_start";
+   if(!ObjectCreate(0, endName, OBJ_VLINE, 0, rangeEnd, 0))
+     {
+      Print("Failed to create high line: ", GetLastError());
+      return;
+     }
+   ObjectSetInteger(0, endName, OBJPROP_COLOR, clrBlueViolet);
+   ObjectSetInteger(0, endName, OBJPROP_STYLE, STYLE_SOLID);
+   ObjectSetInteger(0, endName, OBJPROP_WIDTH, 1);
+   ObjectSetInteger(0, endName, OBJPROP_BACK, false);
+
+// High line
+   string highName = baseName + "_High";
+   if(!ObjectCreate(0, highName, OBJ_HLINE, 0, 0, rangeHigh))
+     {
+      Print("Failed to create high line: ", GetLastError());
+      return;
+     }
+   ObjectSetInteger(0, highName, OBJPROP_COLOR, clrLime);
+   ObjectSetInteger(0, highName, OBJPROP_STYLE, STYLE_SOLID);
+   ObjectSetInteger(0, highName, OBJPROP_WIDTH, 1);
+   ObjectSetInteger(0, highName, OBJPROP_BACK, false);
+
+// High Max line
+   if(rm == RANGE_SIZE_ZONE)
+     {
+      string MaxhighName = baseName + "_High_Max";
+      if(!ObjectCreate(0, MaxhighName, OBJ_HLINE, 0, 0, maxPriceRange))
+        {
+         Print("Failed to create high line: ", GetLastError());
+         return;
+        }
+      ObjectSetInteger(0, MaxhighName, OBJPROP_COLOR, clrLime);
+      ObjectSetInteger(0, MaxhighName, OBJPROP_STYLE, STYLE_DASH);
+      ObjectSetInteger(0, MaxhighName, OBJPROP_WIDTH, 1);
+      ObjectSetInteger(0, MaxhighName, OBJPROP_BACK, false);
+     }
+// Low line
+   string lowName = baseName + "_Low";
+   if(!ObjectCreate(0, lowName, OBJ_HLINE, 0, 0, rangeLow))
+     {
+      Print("Failed to create low line: ", GetLastError());
+      return;
+     }
+   ObjectSetInteger(0, lowName, OBJPROP_COLOR, clrRed);
+   ObjectSetInteger(0, lowName, OBJPROP_STYLE, STYLE_SOLID);
+   ObjectSetInteger(0, lowName, OBJPROP_WIDTH, 1);
+   ObjectSetInteger(0, lowName, OBJPROP_BACK, false);
+
+// low Max line
+   if(rm == RANGE_SIZE_ZONE)
+     {
+      string MaxLowName = baseName + "_Low_Max";
+      if(!ObjectCreate(0, MaxLowName, OBJ_HLINE, 0, 0, maxPriceRangeLow))
+        {
+         Print("Failed to create high line: ", GetLastError());
+         return;
+        }
+      ObjectSetInteger(0, MaxLowName, OBJPROP_COLOR, clrRed);
+      ObjectSetInteger(0, MaxLowName, OBJPROP_STYLE, STYLE_DASH);
+      ObjectSetInteger(0, MaxLowName, OBJPROP_WIDTH, 1);
+      ObjectSetInteger(0, MaxLowName, OBJPROP_BACK, false);
+     }
+  }
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Draw consolidation range rectangle                                 |
+//+------------------------------------------------------------------+
+void DrawRangeRectangle()
+  {
+   ObjectDelete(0, rectangleName);
+   ObjectCreate(0, rectangleName, OBJ_RECTANGLE, 0, CrangeStartTime, CrangeHigh, CrangeEndTime, CrangeLow);
+   ObjectSetInteger(0, rectangleName, OBJPROP_COLOR, clrBlue);
+   ObjectSetInteger(0, rectangleName, OBJPROP_STYLE, STYLE_SOLID);
+   ObjectSetInteger(0, rectangleName, OBJPROP_WIDTH, 2);
+   ObjectSetInteger(0, rectangleName, OBJPROP_FILL, false);
+  }
+
+//+------------------------------------------------------------------+

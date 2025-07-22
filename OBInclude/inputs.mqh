@@ -6,6 +6,12 @@
 #property copyright "Copyright 2025, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
 
+enum trailingstopStrat
+  {
+   CLASSIC_TRAILING_STOP, // Classic Trailing Stop
+   ATR_BASED_TRAILING_STOP// ATR Based Trailing Stop
+  };
+
 input group                "General settings"
 input int uniqueMagicNumber= 1234555;
 input int lookBackPeriod   = 100; // for history
@@ -23,7 +29,9 @@ input group             "Trading settings"
 input bool                 enableOrderBlock        = true; // Enable Order Block trading
 input bool                 forbidMondayFriday      = true; // no trade on friday and monday
 input bool                 enableTrailingStop      = true; // enable trailing stop
+input trailingstopStrat    trailingStrat           = CLASSIC_TRAILING_STOP; // trailing stop strategy
 input double               trailingStopPoints      = 300; // enable trailing stop distance
+input bool                 isCrypto                = false; // if symbol is crypto , allow 24/7 trading
 input int                  ADX_Period              = 14; // ADX Period
 input double               ADX_Threshold           = 25.0; // ADX Threshold
 input int                  Fast_MA_Period          = 10;   // Fast MA Period
@@ -39,6 +47,8 @@ input double               fibo2ndTP               = 1.618; // Set second TP bas
 input double               fibo2ndTrigger          = 1.4;
 input double               fibo3rdTP               = 2.3812; // Set second TP based on fibonacci
 input double               fibo3rdTrigger          = 2.0;
+input bool                 enableDPICT             = true; // Enable Discount / Premium Zone
+input ENUM_TIMEFRAMES      dptf                    = PERIOD_H4; // timeframe to set Discount / premium Zone
 
 input group             "Liquidity Sweep prevention"
 input int                  lookbackBars = 5;         // Swing detection sensitivity
