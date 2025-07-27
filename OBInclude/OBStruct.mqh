@@ -40,7 +40,7 @@ struct orderBlock
    datetime          prevlowi, prevhighi;
    bool              cross127, cross161,cross238,cross50;
    short             trendDir;
-   int               parent;
+   int               hasParent;
    ulong             tradeTicket;
    ulong             revengeTicket;
    ulong             lightBuzzTicket;
@@ -50,10 +50,85 @@ struct orderBlock
    double            takeProfit;
    double            stopLoss;
 
-  
+
+   bool              isInsideHTFOB()
+     {
+      if(hasParent > 0)
+         return true;
+
+      int parentOB = -1;
+
+      // Get the higher timeframe candle that contains the 6-minute candle
+      int shift = iBarShift(_Symbol, HTOB, startTime, false) ;
+      if(shift < 0)
+        {
+         Print("Error: Could not find corresponding bar in higher timeframe. Error code: ", GetLastError());
+         return false;
+        }
+
+      MqlRates initHTFHa[];
+      int HtflookBackPeriod = shift + 10;
+      ArrayResize(initHTFHa, HtflookBackPeriod);
+      CopyRates(_Symbol,HTOB,0,HtflookBackPeriod,initHTFHa);
+      for(int a = 0; a < HtflookBackPeriod ; a++)
+        {
+         ArrayCopy(hA, initHTFHa, 0, a, 5);
+         if(HTFalreadyFound() == false)
+           {
+            parentOB = detectHTFOB();
+            if(parentOB > -1)
+               break;
+           }
+        }
+
+
+      if(parentOB > -1)
+        {
+
+         // Assume order block detection logic (customize as per your EA's definition)
+         // Example: Bullish order block (close > open and significant move)
+         bool isBullishOB = HTobBuffer[parentOB].isBear;
+         bool isBearishOB = HTobBuffer[parentOB].isBear;
+
+         // Check if the 6-minute order block is within the higher timeframe candle's range
+         bool isWithinRange = (highPrice <= HTobBuffer[parentOB].fib50 && lowPrice >= HTobBuffer[parentOB].lowPrice);
+
+         // Additional condition: Ensure the order block types match (e.g., both bullish or both bearish)
+         // Modify this based on your order block definition
+         bool isValidOB = false;
+         if(isWithinRange)
+           {
+            // Example: Assume 6-minute block is bullish if high6Min > low6Min (simplified)
+            bool is6MinBullish = (highPrice > lowPrice); // Replace with your actual logic
+            if(is6MinBullish && isBullishOB)
+              {
+               isValidOB = true; // Bullish 6-min block within bullish HTF block
+              }
+            else
+               if(!is6MinBullish && isBearishOB)
+                 {
+                  isValidOB = true; // Bearish 6-min block within bearish HTF block
+                 }
+           }
+
+         if(isValidOB)
+           {
+            Print("Order block on 6-min timeframe at ", TimeToString(startTime),
+                  " is part of a higher timeframe order block at ", TimeToString(HTobBuffer[parentOB].startTime));
+            stars = stars + 1;
+            hasParent = parentOB;
+            return true;
+           }
+        }
+
+      return false;
+
+
+     }
+
    void              init(string myName,int myIndex, datetime startT,
                           double highP,double lowP, double OBBdy, double lastCandlesWick, bool bear = false,
-                          long oC = clrBlue)
+                          long oC = clrBlue, bool isHTFOB = false)
      {
 
       name = myName;
@@ -70,6 +145,7 @@ struct orderBlock
       isMitigated = false;
       isImbalanced= false;
       isLightbuzz = false;
+      hasParent = -1;
       isDone=false;
       isBOS= false;
       DoTrailing = false;
@@ -80,7 +156,10 @@ struct orderBlock
       OBBody = OBBdy;
       OBWick = lastCandlesWick;
 
-      getFibLevels(myIndex);
+      if(isHTFOB == false)
+        {
+         getFibLevels(myIndex);
+        }
 
       cross127    = false;
       cross161    = false;
@@ -88,13 +167,17 @@ struct orderBlock
       cross50     = false;
 
       mitigatedLine = (highPrice + lowPrice) / 2;
-      if(isFirstOB(myIndex) == false)
+      if(isHTFOB == false)
         {
-         OBcolor = clrPurple;
-         isDone = true;
-         stars = 0;
+         if(isFirstOB(myIndex) == false)
+           {
+            OBcolor = clrPurple;
+            isDone = true;
+            stars = 0;
+           }
         }
 
-     };
+     }
 
-  };
+  }
+//+------------------------------------------------------------------+
