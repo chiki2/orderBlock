@@ -5,6 +5,23 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2025, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
+
+enum NoTradeReason
+  {
+      ENUM_NO_REASON, // No problem, trade can be filled
+      ENUM_REASON_IMBALANCED_NOT_FILLED, // Imbalanced is not filled 
+      ENUM_REASON_NO_LIQUIDITY_SWEPT_BEFORE, //  No liquidity swept before OB
+      ENUM_REASON_DISTRIBUION_WYCKOFF, // Distribution detected
+      ENUM_REASON_ACCUMULATION_WYCKOFF, // Accumulation detected
+      ENUM_REASON_NO_ENOUGH_FUND, // No enough fund to realize the trade
+      ENUM_REASON_LOWER_FAST_MA, // Price is lower than Fast moving average
+      ENUM_REASON_HIGHER_FAST_MA, // Prise is Higher than Fast moving average
+      ENUM_REASON_ISDONE, // Order Block is Done, soon deleted
+      ENUM_REASON_ISMITIGATED, // Order Block is mitigated
+      ENUM_REASON_IS_NOT_PREMIUM, // Bearish Order Block is not in the Premium zone
+      ENUM_REASON_IS_NOT_DISCOUNT, // Bullish Order Block is not in the Discount zone
+  };
+
 struct orderBlock
   {
 
@@ -12,6 +29,7 @@ struct orderBlock
    int               index;
    datetime          startTime;
    double            entryPrice;
+   datetime          entryTime;
    double            highPrice;
    double            lowPrice;
    double            imbalancePrice;
@@ -36,7 +54,7 @@ struct orderBlock
    double            fibn027; // sl
    double            fib50; // entry price
    double            fib80, fib100, fib140; // if reach, sl is move to entry point + comission + spread, TP is moved to next tp level fib161 -> 238
-   double            fib127, fib1618, fib200, fib23812; // to validate rehearsal as enough
+   double            fib127, fib1618, fib200, fib23812, fibLimit; // to validate rehearsal as enough
    datetime          prevlowi, prevhighi;
    bool              cross127, cross161,cross238,cross50;
    short             trendDir;
@@ -49,11 +67,12 @@ struct orderBlock
    bool              isrevenge;
    double            takeProfit;
    double            stopLoss;
+   NoTradeReason     reason;
 
 
    bool              isInsideHTFOB()
      {
-      if(hasParent > 0)
+      if(this.hasParent > 0)
          return true;
 
       int parentOB = -1;
@@ -99,24 +118,24 @@ struct orderBlock
          if(isWithinRange)
            {
             // Example: Assume 6-minute block is bullish if high6Min > low6Min (simplified)
-            bool is6MinBullish = (highPrice > lowPrice); // Replace with your actual logic
-            if(is6MinBullish && isBullishOB)
+            bool is6MinBearish = this.isBear; // Replace with your actual logic
+            if(is6MinBearish == false && isBullishOB == false)
               {
                isValidOB = true; // Bullish 6-min block within bullish HTF block
               }
             else
-               if(!is6MinBullish && isBearishOB)
+               if(is6MinBearish == true && isBearishOB == true)
                  {
                   isValidOB = true; // Bearish 6-min block within bearish HTF block
                  }
            }
 
-         if(isValidOB)
+         if(isValidOB == true )
            {
             Print("Order block on 6-min timeframe at ", TimeToString(startTime),
                   " is part of a higher timeframe order block at ", TimeToString(HTobBuffer[parentOB].startTime));
-            stars = stars + 1;
-            hasParent = parentOB;
+            this.stars = this.stars + 1;
+            this.hasParent = parentOB;
             return true;
            }
         }
