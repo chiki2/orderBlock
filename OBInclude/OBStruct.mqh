@@ -16,6 +16,8 @@ enum NoTradeReason
       ENUM_REASON_NO_ENOUGH_FUND, // No enough fund to realize the trade
       ENUM_REASON_LOWER_FAST_MA, // Price is lower than Fast moving average
       ENUM_REASON_HIGHER_FAST_MA, // Prise is Higher than Fast moving average
+      ENUM_REASON_LOWER_SLOW_MA, // Price is lower than Slow moving average
+      ENUM_REASON_HIGHER_SLOW_MA, // Prise is Higher than Slow moving average
       ENUM_REASON_ISDONE, // Order Block is Done, soon deleted
       ENUM_REASON_ISMITIGATED, // Order Block is mitigated
       ENUM_REASON_IS_NOT_PREMIUM, // Bearish Order Block is not in the Premium zone
@@ -186,6 +188,9 @@ struct orderBlock
       cross50     = false;
 
       mitigatedLine = (highPrice + lowPrice) / 2;
+      if ( TerminalInfoInteger(TERMINAL_VPS) == 1){
+         Print("A new Order Block is detected " );
+      }
       if(isHTFOB == false)
         {
          if(isFirstOB(myIndex) == false)
