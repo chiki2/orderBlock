@@ -63,7 +63,9 @@ input double               fibo3rdTrigger          = 2.0;
 input double               fiboExtended            = 8.0; // Fibonnacci Over extended level
 input bool                 enableDPICT             = true; // Enable Discount / Premium Zone
 input ENUM_TIMEFRAMES      dptf                    = PERIOD_H4; // timeframe to set Discount / premium Zone
-
+input group             "======== Display settings ========"
+input bool                 displayPP               = true; // Display Pivot Point
+input bool                 displayCPR              = true; // Display CPR 
 input group             "======== Liquidity Sweep prevention ========"
 input int                  lookbackBars = 10;         // Swing detection sensitivity
 input double               wickTolerance = 2;      // Tolerance for wick deviation in points
@@ -93,7 +95,7 @@ input int ScreenshotWidth = 1920;  // Screenshot width
 input int ScreenshotHeight = 1080; // Screenshot height
 input string FolderName = "Screenshots/"; // Custom folder for saving screenshot
 
-input bool  enableAdminPanel = false;
+bool  enableAdminPanel = false;
 
 //input group             "Panel settings"
 int                  InpX                    = 5;                // X-axis distance

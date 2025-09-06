@@ -9,6 +9,7 @@
 enum NoTradeReason
   {
       ENUM_NO_REASON, // No problem, trade can be filled
+      ENUM_LACK_STARS, // need 3 stars
       ENUM_REASON_IMBALANCED_NOT_FILLED, // Imbalanced is not filled 
       ENUM_REASON_NO_LIQUIDITY_SWEPT_BEFORE, //  No liquidity swept before OB
       ENUM_REASON_DISTRIBUION_WYCKOFF, // Distribution detected
@@ -153,6 +154,7 @@ struct orderBlock
      {
 
       name = myName;
+      reason = ENUM_NO_REASON;
       startTime = startT;
       index= myIndex;
       highPrice = highP;
