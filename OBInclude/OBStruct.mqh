@@ -8,7 +8,10 @@
 
 enum NoTradeReason
   {
+      ENUM_REASON_INIT, // No problem, trade can be filled
       ENUM_NO_REASON, // No problem, trade can be filled
+      ENUM_REASON_IS_OVERDUE, // overdue
+      ENUM_REASON_IS_OVEEXTENDED, // overdue
       ENUM_LACK_STARS, // need 3 stars
       ENUM_REASON_IMBALANCED_NOT_FILLED, // Imbalanced is not filled 
       ENUM_REASON_NO_LIQUIDITY_SWEPT_BEFORE, //  No liquidity swept before OB
@@ -23,6 +26,10 @@ enum NoTradeReason
       ENUM_REASON_ISMITIGATED, // Order Block is mitigated
       ENUM_REASON_IS_NOT_PREMIUM, // Bearish Order Block is not in the Premium zone
       ENUM_REASON_IS_NOT_DISCOUNT, // Bullish Order Block is not in the Discount zone
+      ENUM_REASON_IS_COUNTER_BULLISH, // counter trend
+      ENUM_REASON_IS_COUNTER_BEARISH, // counter trend
+      ENUM_REASON_IS_LOW_IMBALANCE, // low imbalance
+      ENUM_REASON_IS_PURPLE, // there is a previous OB
   };
 
 struct orderBlock
@@ -154,7 +161,7 @@ struct orderBlock
      {
 
       name = myName;
-      reason = ENUM_NO_REASON;
+      reason = ENUM_REASON_INIT;
       startTime = startT;
       index= myIndex;
       highPrice = highP;
@@ -200,6 +207,7 @@ struct orderBlock
             OBcolor = clrPurple;
             isDone = true;
             stars = 0;
+            reason = ENUM_REASON_IS_PURPLE;
            }
         }
 
