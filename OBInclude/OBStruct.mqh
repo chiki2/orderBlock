@@ -96,7 +96,7 @@ struct orderBlock
         }
 
       MqlRates initHTFHa[];
-      int HtflookBackPeriod = shift + 10;
+      int HtflookBackPeriod = shift + 30;
       ArrayResize(initHTFHa, HtflookBackPeriod);
       CopyRates(_Symbol,HTOB,0,HtflookBackPeriod,initHTFHa);
       for(int a = 0; a < HtflookBackPeriod ; a++)

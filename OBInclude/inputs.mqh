@@ -5,7 +5,6 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2025, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
-
 enum trailingstopStrat
   {
    CLASSIC_TRAILING_STOP, // Classic Trailing Stop
@@ -18,6 +17,16 @@ enum tradeType
    SELL_STOP, // only Sell
    BOTH, //Both buy & Sell
   };
+  
+enum marketType{
+   OB_ASIAN_MARKET, // Asian market only
+   OB_LONDON_MARKET, // London market only
+   OB_NY_MARKET, // NY market only
+   OB_ALL, // Asian, London & NY market
+   OB_NY_ASIAN, // NY & Asian market only
+   OB_ASIAN_UK, // Asian & London market only
+   OB_UK_NY, // London & NY market only
+};
 
 input group                "======== General settings ========"
 input int uniqueMagicNumber= 1234555;
@@ -35,6 +44,7 @@ input bool EnableClock     = false; // Enable clock trade server
 
 
 input group             "======== Trading settings ========"
+input marketType           inpMarketMode           = OB_UK_NY; // Market selection
 input bool                 forbidMondayFriday      = true; // no trade on friday and monday
 input bool                 enableTrailingStop      = false; // enable trailing stop
 input trailingstopStrat    trailingStrat           = ATR_BASED_TRAILING_STOP; // trailing stop strategy
