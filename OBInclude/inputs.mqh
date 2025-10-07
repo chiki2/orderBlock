@@ -19,13 +19,13 @@ enum tradeType
   };
   
 enum marketType{
-   OB_ASIAN_MARKET, // Asian market only
-   OB_LONDON_MARKET, // London market only
-   OB_NY_MARKET, // NY market only
-   OB_ALL, // Asian, London & NY market
-   OB_NY_ASIAN, // NY & Asian market only
-   OB_ASIAN_UK, // Asian & London market only
-   OB_UK_NY, // London & NY market only
+   OB_ASIAN_MARKET = 0, // Asian market only
+   OB_LONDON_MARKET = 1, // London market only
+   OB_NY_MARKET = 2, // NY market only
+   OB_ALL = 3, // Asian, London & NY market
+   OB_NY_ASIAN = 4, // NY & Asian market only
+   OB_ASIAN_UK  = 5, // Asian & London market only
+   OB_UK_NY = 6 // London & NY market only
 };
 
 input group                "======== General settings ========"
@@ -35,11 +35,11 @@ input double maxWickRatio  = 1.5; // wick size OB candle
 input int minBodySize      = 10; // body size OB candle
 input int minImBalanced    = 10; // minimum imbalanced
 input ENUM_TIMEFRAMES CTOB = PERIOD_M6; // current time frame
-input bool enableHTOB      = false; // Enable Order block trading confirmation with Higher timeframe
-input ENUM_TIMEFRAMES HTOB = PERIOD_H1; // Higher time frame to check for OB
+//input bool enableHTOB      = false; // Enable Order block trading confirmation with Higher timeframe
+//input ENUM_TIMEFRAMES HTOB = PERIOD_H1; // Higher time frame to check for OB
 input bool showOB          = false; // show all OrderBlock (even these with less than 3 stars)
 input bool  maxGain        = true; // Enable Max gain (TP and SL upgrade as long as the price action goes in the way of the order block)
-input int   outdatedOB     = 8; // in hours, max time an order block is alive
+input int   outdatedOB     = 80; // in candles, max number of candles an order block is alive
 input bool EnableClock     = false; // Enable clock trade server
 
 

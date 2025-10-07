@@ -82,7 +82,7 @@ struct orderBlock
 
    bool              isInsideHTFOB()
      {
-      if(this.hasParent > 0)
+   /*   if(this.hasParent > 0)
          return true;
 
       int parentOB = -1;
@@ -116,25 +116,25 @@ struct orderBlock
 
          // Assume order block detection logic (customize as per your EA's definition)
          // Example: Bullish order block (close > open and significant move)
-         bool isBullishOB = HTobBuffer[parentOB].isBear;
-         bool isBearishOB = HTobBuffer[parentOB].isBear;
+         bool isHTBullishOB = HTobBuffer[parentOB].isBear;
+         bool isHTBearishOB = HTobBuffer[parentOB].isBear;
 
          // Check if the 6-minute order block is within the higher timeframe candle's range
-         bool isWithinRange = (highPrice <= HTobBuffer[parentOB].fib50 && lowPrice >= HTobBuffer[parentOB].lowPrice);
+         bool isWithinRange = (HTobBuffer[parentOB].fib50 <= this.entryPrice && this.entryPrice >= HTobBuffer[parentOB].highPrice) ? true : false;
 
          // Additional condition: Ensure the order block types match (e.g., both bullish or both bearish)
          // Modify this based on your order block definition
          bool isValidOB = false;
-         if(isWithinRange)
+         if(isWithinRange == true )
            {
             // Example: Assume 6-minute block is bullish if high6Min > low6Min (simplified)
             bool is6MinBearish = this.isBear; // Replace with your actual logic
-            if(is6MinBearish == false && isBullishOB == false)
+            if(is6MinBearish == false && isHTBullishOB == false)
               {
                isValidOB = true; // Bullish 6-min block within bullish HTF block
               }
             else
-               if(is6MinBearish == true && isBearishOB == true)
+               if(is6MinBearish == true && isHTBearishOB == true)
                  {
                   isValidOB = true; // Bearish 6-min block within bearish HTF block
                  }
@@ -149,7 +149,7 @@ struct orderBlock
             return true;
            }
         }
-
+*/
       return false;
 
 
@@ -186,10 +186,8 @@ struct orderBlock
       OBBody = OBBdy;
       OBWick = lastCandlesWick;
 
-      if(isHTFOB == false)
-        {
-         getFibLevels(myIndex);
-        }
+      getFibLevels(myIndex);
+
 
       cross127    = false;
       cross161    = false;
