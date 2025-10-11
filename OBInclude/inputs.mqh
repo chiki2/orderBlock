@@ -5,28 +5,8 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2025, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
-enum trailingstopStrat
-  {
-   CLASSIC_TRAILING_STOP, // Classic Trailing Stop
-   ATR_BASED_TRAILING_STOP// ATR Based Trailing Stop
-  };
+#include "globals.mqh"
 
-enum tradeType
-  {
-   BUY_STOP, // only Buy
-   SELL_STOP, // only Sell
-   BOTH, //Both buy & Sell
-  };
-  
-enum marketType{
-   OB_ASIAN_MARKET = 0, // Asian market only
-   OB_LONDON_MARKET = 1, // London market only
-   OB_NY_MARKET = 2, // NY market only
-   OB_ALL = 3, // Asian, London & NY market
-   OB_NY_ASIAN = 4, // NY & Asian market only
-   OB_ASIAN_UK  = 5, // Asian & London market only
-   OB_UK_NY = 6 // London & NY market only
-};
 
 input group                "======== General settings ========"
 input int uniqueMagicNumber= 1234555;
@@ -55,6 +35,7 @@ input int                  Fast_MA_Period          = 15;   // Fast MA Period
 input int                  Slow_MA_Period          = 45;   // Slow MA Period
 input int                  ATR_Period              = 20; // ATR period
 input double               ATR_multiplier          = 3.5; // ATR multiplier
+input MitigatedDL          MitigatedMode           = OB_MITIGATED_MIDLINE; // OB mitigation mode : OB High / midline / OB low
 //input double               VolumeThreshold         = 1.5; // Tick volume to valid strong OB
 //input bool                 enableRsiCond           = false; // Enable RSI (20 > buy > 50 & 50 > sell > 75 )
 //input double               rsiMinThreshold         = 20.0; // RSI min Threshold
@@ -99,7 +80,6 @@ input int      MinutesBeforeNews = 30;      // Minutes before news to stop tradi
 input int      MinutesAfterNews = 30;       // Minutes after news to resume trading
 
 input group             "======== Trading debug ========"
-input bool showDebug       = false; // Show debug messages
 input bool enableScreenshot= true; // Enable Screenshot for TP & SL
 input int ScreenshotWidth = 1920;  // Screenshot width
 input int ScreenshotHeight = 1080; // Screenshot height

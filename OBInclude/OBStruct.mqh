@@ -30,6 +30,7 @@ enum NoTradeReason
       ENUM_REASON_IS_COUNTER_BEARISH, // counter trend
       ENUM_REASON_IS_LOW_IMBALANCE, // low imbalance
       ENUM_REASON_IS_PURPLE, // there is a previous OB
+      ENUM_REASON_TREND_RANGE_PROTECTION, // trend is range so protection enabled
   };
 
 struct orderBlock
@@ -181,8 +182,8 @@ struct orderBlock
       DoTrailing = false;
       OBcolor = oC;
       trendDir = trendDirection;
-      stars = (trendDirection == 1 && isBear == false) ? stars + 1 : 0;
-      stars = (trendDirection == -1 && isBear == true) ? stars + 1 : 0;
+      //stars = (trendDirection == 1 && isBear == false) ? stars + 1 : 0;
+      //stars = (trendDirection == -1 && isBear == true) ? stars + 1 : 0;
       OBBody = OBBdy;
       OBWick = lastCandlesWick;
 
