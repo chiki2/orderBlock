@@ -75,6 +75,7 @@ input double               maximalDailyLoss        = 0.3;  // Maximal authorized
 
 input group             "======== News filter settings ========"
 input bool     EnableCheckNews     = true;      // Enable News filtering
+input string   Npair               = "USD";     // Currency to filter news on
 input int      NewsImportanceLevel = 3;        // High impact level (1=Low, 2=Medium, 3=High)
 input int      MinutesBeforeNews = 30;      // Minutes before news to stop trading
 input int      MinutesAfterNews = 30;       // Minutes after news to resume trading

@@ -31,6 +31,7 @@ enum NoTradeReason
       ENUM_REASON_IS_LOW_IMBALANCE, // low imbalance
       ENUM_REASON_IS_PURPLE, // there is a previous OB
       ENUM_REASON_TREND_RANGE_PROTECTION, // trend is range so protection enabled
+      ENUM_REASON_DONE, // done with TP or SL
   };
 
 struct orderBlock
