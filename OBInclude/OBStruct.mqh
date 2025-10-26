@@ -14,6 +14,7 @@ enum NoTradeReason
       ENUM_REASON_IS_OVEEXTENDED, // overdue
       ENUM_LACK_STARS, // need 3 stars
       ENUM_REASON_IMBALANCED_NOT_FILLED, // Imbalanced is not filled 
+      ENUM_REASON_IMBALANCED_FILLED, // Imbalanced filled 
       ENUM_REASON_NO_LIQUIDITY_SWEPT_BEFORE, //  No liquidity swept before OB
       ENUM_REASON_DISTRIBUION_WYCKOFF, // Distribution detected
       ENUM_REASON_ACCUMULATION_WYCKOFF, // Accumulation detected
@@ -32,6 +33,8 @@ enum NoTradeReason
       ENUM_REASON_IS_PURPLE, // there is a previous OB
       ENUM_REASON_TREND_RANGE_PROTECTION, // trend is range so protection enabled
       ENUM_REASON_DONE, // done with TP or SL
+      ENUM_NOT_CROSSED_127,
+      ENUM_NOT_CROSSED_50,
   };
 
 struct orderBlock
@@ -79,6 +82,9 @@ struct orderBlock
    bool              isrevenge;
    double            takeProfit;
    double            stopLoss;
+   double            stoplossDistance;
+   bool              is1R;
+   
    NoTradeReason     reason;
 
 
@@ -177,6 +183,7 @@ struct orderBlock
       isMitigated = false;
       isImbalanced= false;
       isLightbuzz = false;
+      is1R        = false;
       hasParent = -1;
       isDone=false;
       isBOS= false;
@@ -190,6 +197,7 @@ struct orderBlock
 
       getFibLevels(myIndex);
 
+      stoplossDistance = MathAbs(fib50 - fibn027) * _Point;
 
       cross127    = false;
       cross161    = false;

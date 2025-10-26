@@ -20,7 +20,7 @@ input ENUM_TIMEFRAMES CTOB = PERIOD_M6; // current time frame
 input bool showOB          = false; // show all OrderBlock (even these with less than 3 stars)
 input bool  maxGain        = true; // Enable Max gain (TP and SL upgrade as long as the price action goes in the way of the order block)
 input int   outdatedOB     = 80; // in candles, max number of candles an order block is alive
-input bool EnableClock     = false; // Enable clock trade server
+string correlatedSym = "USDX"; // Correlated symbol for Dollar Index
 
 
 input group             "======== Trading settings ========"
@@ -36,11 +36,6 @@ input int                  Slow_MA_Period          = 45;   // Slow MA Period
 input int                  ATR_Period              = 20; // ATR period
 input double               ATR_multiplier          = 3.5; // ATR multiplier
 input MitigatedDL          MitigatedMode           = OB_MITIGATED_MIDLINE; // OB mitigation mode : OB High / midline / OB low
-//input double               VolumeThreshold         = 1.5; // Tick volume to valid strong OB
-//input bool                 enableRsiCond           = false; // Enable RSI (20 > buy > 50 & 50 > sell > 75 )
-//input double               rsiMinThreshold         = 20.0; // RSI min Threshold
-//input double               rsiMaxThreshold         = 75.0; // RSI max Threshold
-//input int                  rsiPeriod               = 14; // RSI period
 input tradeType            typeOfTrade             = BOTH; // Type of trade (Buy / Sell / Both);
 input bool                 clsPositiveTradeOnClose = true; //enable positive trade to close before market closure to avoid swap
 input double               fiboEntry               = 0.5; // Set entry price based on fibonacci
@@ -57,6 +52,7 @@ input ENUM_TIMEFRAMES      dptf                    = PERIOD_H4; // timeframe to 
 input group             "======== Display settings ========"
 input bool                 displayPP               = true; // Display Pivot Point
 input bool                 displayCPR              = true; // Display CPR 
+input bool                 EnableClock             = false;// Display clock trade server
 input group             "======== Liquidity Sweep prevention ========"
 input int                  lookbackBars = 10;         // Swing detection sensitivity
 input double               wickTolerance = 2;      // Tolerance for wick deviation in points
@@ -72,6 +68,7 @@ input double               riskByTrade             = 0.20; // Maximum risk by tr
 input double               minRiskByTrade          = 0.05; // Minimum risk by trade if balance is over 2nd balance
 input double               inpStopLossPoints       = 100;  // Stop loss points
 input double               maximalDailyLoss        = 0.3;  // Maximal authorized daily loss ( will stop for the rest of the day )
+//input double               obMeterScore            = 0.5; // Ob meter min. score to trade
 
 input group             "======== News filter settings ========"
 input bool     EnableCheckNews     = true;      // Enable News filtering
@@ -85,8 +82,6 @@ input bool enableScreenshot= true; // Enable Screenshot for TP & SL
 input int ScreenshotWidth = 1920;  // Screenshot width
 input int ScreenshotHeight = 1080; // Screenshot height
 input string FolderName = "Screenshots/"; // Custom folder for saving screenshot
-
-bool  enableAdminPanel = false;
 
 //input group             "Panel settings"
 int                  InpX                    = 5;                // X-axis distance
