@@ -203,6 +203,10 @@ struct orderBlock
       cross161    = false;
       cross238    = false;
       cross50     = false;
+      
+      if ( tslTrigger == TLS_TRIGGER_ALWAYS){
+         DoTrailing = true;
+      }
 
       mitigatedLine = (highPrice + lowPrice) / 2;
       if ( TerminalInfoInteger(TERMINAL_VPS) == 1){
