@@ -5,36 +5,37 @@
 //+------------------------------------------------------------------+
 #property copyright "Copyright 2025, MetaQuotes Ltd."
 #property link      "https://www.mql5.com"
+#include "globals.mqh"
 
 enum NoTradeReason
   {
-      ENUM_REASON_INIT, // No problem, trade can be filled
-      ENUM_NO_REASON, // No problem, trade can be filled
-      ENUM_REASON_IS_OVERDUE, // overdue
-      ENUM_REASON_IS_OVEEXTENDED, // overdue
-      ENUM_LACK_STARS, // need 3 stars
-      ENUM_REASON_IMBALANCED_NOT_FILLED, // Imbalanced is not filled 
-      ENUM_REASON_IMBALANCED_FILLED, // Imbalanced filled 
-      ENUM_REASON_NO_LIQUIDITY_SWEPT_BEFORE, //  No liquidity swept before OB
-      ENUM_REASON_DISTRIBUION_WYCKOFF, // Distribution detected
-      ENUM_REASON_ACCUMULATION_WYCKOFF, // Accumulation detected
-      ENUM_REASON_NO_ENOUGH_FUND, // No enough fund to realize the trade
-      ENUM_REASON_LOWER_FAST_MA, // Price is lower than Fast moving average
-      ENUM_REASON_HIGHER_FAST_MA, // Prise is Higher than Fast moving average
-      ENUM_REASON_LOWER_SLOW_MA, // Price is lower than Slow moving average
-      ENUM_REASON_HIGHER_SLOW_MA, // Prise is Higher than Slow moving average
-      ENUM_REASON_ISDONE, // Order Block is Done, soon deleted
-      ENUM_REASON_ISMITIGATED, // Order Block is mitigated
-      ENUM_REASON_IS_NOT_PREMIUM, // Bearish Order Block is not in the Premium zone
-      ENUM_REASON_IS_NOT_DISCOUNT, // Bullish Order Block is not in the Discount zone
-      ENUM_REASON_IS_COUNTER_BULLISH, // counter trend
-      ENUM_REASON_IS_COUNTER_BEARISH, // counter trend
-      ENUM_REASON_IS_LOW_IMBALANCE, // low imbalance
-      ENUM_REASON_IS_PURPLE, // there is a previous OB
-      ENUM_REASON_TREND_RANGE_PROTECTION, // trend is range so protection enabled
-      ENUM_REASON_DONE, // done with TP or SL
-      ENUM_NOT_CROSSED_127,
-      ENUM_NOT_CROSSED_50,
+   ENUM_REASON_INIT, // No problem, trade can be filled
+   ENUM_NO_REASON, // No problem, trade can be filled
+   ENUM_REASON_IS_OVERDUE, // overdue
+   ENUM_REASON_IS_OVEEXTENDED, // overdue
+   ENUM_LACK_STARS, // need 3 stars
+   ENUM_REASON_IMBALANCED_NOT_FILLED, // Imbalanced is not filled
+   ENUM_REASON_IMBALANCED_FILLED, // Imbalanced filled
+   ENUM_REASON_NO_LIQUIDITY_SWEPT_BEFORE, //  No liquidity swept before OB
+   ENUM_REASON_DISTRIBUION_WYCKOFF, // Distribution detected
+   ENUM_REASON_ACCUMULATION_WYCKOFF, // Accumulation detected
+   ENUM_REASON_NO_ENOUGH_FUND, // No enough fund to realize the trade
+   ENUM_REASON_LOWER_FAST_MA, // Price is lower than Fast moving average
+   ENUM_REASON_HIGHER_FAST_MA, // Prise is Higher than Fast moving average
+   ENUM_REASON_LOWER_SLOW_MA, // Price is lower than Slow moving average
+   ENUM_REASON_HIGHER_SLOW_MA, // Prise is Higher than Slow moving average
+   ENUM_REASON_ISDONE, // Order Block is Done, soon deleted
+   ENUM_REASON_ISMITIGATED, // Order Block is mitigated
+   ENUM_REASON_IS_NOT_PREMIUM, // Bearish Order Block is not in the Premium zone
+   ENUM_REASON_IS_NOT_DISCOUNT, // Bullish Order Block is not in the Discount zone
+   ENUM_REASON_IS_COUNTER_BULLISH, // counter trend
+   ENUM_REASON_IS_COUNTER_BEARISH, // counter trend
+   ENUM_REASON_IS_LOW_IMBALANCE, // low imbalance
+   ENUM_REASON_IS_PURPLE, // there is a previous OB
+   ENUM_REASON_TREND_RANGE_PROTECTION, // trend is range so protection enabled
+   ENUM_REASON_DONE, // done with TP or SL
+   ENUM_NOT_CROSSED_127,
+   ENUM_NOT_CROSSED_50,
   };
 
 struct orderBlock
@@ -84,80 +85,81 @@ struct orderBlock
    double            stopLoss;
    double            stoplossDistance;
    bool              is1R;
-   
+   long              sqlID;
+
    NoTradeReason     reason;
 
 
    bool              isInsideHTFOB()
      {
-   /*   if(this.hasParent > 0)
-         return true;
-
-      int parentOB = -1;
-
-      // Get the higher timeframe candle that contains the 6-minute candle
-      int shift = iBarShift(_Symbol, HTOB, startTime, false) ;
-      if(shift < 0)
-        {
-         Print("Error: Could not find corresponding bar in higher timeframe. Error code: ", GetLastError());
-         return false;
-        }
-
-      MqlRates initHTFHa[];
-      int HtflookBackPeriod = shift + 30;
-      ArrayResize(initHTFHa, HtflookBackPeriod);
-      CopyRates(_Symbol,HTOB,0,HtflookBackPeriod,initHTFHa);
-      for(int a = 0; a < HtflookBackPeriod ; a++)
-        {
-         ArrayCopy(hA, initHTFHa, 0, a, 5);
-         if(HTFalreadyFound() == false)
-           {
-            parentOB = detectHTFOB();
-            if(parentOB > -1)
-               break;
-           }
-        }
-
-
-      if(parentOB > -1)
-        {
-
-         // Assume order block detection logic (customize as per your EA's definition)
-         // Example: Bullish order block (close > open and significant move)
-         bool isHTBullishOB = HTobBuffer[parentOB].isBear;
-         bool isHTBearishOB = HTobBuffer[parentOB].isBear;
-
-         // Check if the 6-minute order block is within the higher timeframe candle's range
-         bool isWithinRange = (HTobBuffer[parentOB].fib50 <= this.entryPrice && this.entryPrice >= HTobBuffer[parentOB].highPrice) ? true : false;
-
-         // Additional condition: Ensure the order block types match (e.g., both bullish or both bearish)
-         // Modify this based on your order block definition
-         bool isValidOB = false;
-         if(isWithinRange == true )
-           {
-            // Example: Assume 6-minute block is bullish if high6Min > low6Min (simplified)
-            bool is6MinBearish = this.isBear; // Replace with your actual logic
-            if(is6MinBearish == false && isHTBullishOB == false)
-              {
-               isValidOB = true; // Bullish 6-min block within bullish HTF block
-              }
-            else
-               if(is6MinBearish == true && isHTBearishOB == true)
-                 {
-                  isValidOB = true; // Bearish 6-min block within bearish HTF block
-                 }
-           }
-
-         if(isValidOB == true )
-           {
-            Print("Order block on 6-min timeframe at ", TimeToString(startTime),
-                  " is part of a higher timeframe order block at ", TimeToString(HTobBuffer[parentOB].startTime));
-            this.stars = this.stars + 1;
-            this.hasParent = parentOB;
+      /*   if(this.hasParent > 0)
             return true;
+
+         int parentOB = -1;
+
+         // Get the higher timeframe candle that contains the 6-minute candle
+         int shift = iBarShift(_Symbol, HTOB, startTime, false) ;
+         if(shift < 0)
+           {
+            Print("Error: Could not find corresponding bar in higher timeframe. Error code: ", GetLastError());
+            return false;
            }
-        }
-*/
+
+         MqlRates initHTFHa[];
+         int HtflookBackPeriod = shift + 30;
+         ArrayResize(initHTFHa, HtflookBackPeriod);
+         CopyRates(_Symbol,HTOB,0,HtflookBackPeriod,initHTFHa);
+         for(int a = 0; a < HtflookBackPeriod ; a++)
+           {
+            ArrayCopy(hA, initHTFHa, 0, a, 5);
+            if(HTFalreadyFound() == false)
+              {
+               parentOB = detectHTFOB();
+               if(parentOB > -1)
+                  break;
+              }
+           }
+
+
+         if(parentOB > -1)
+           {
+
+            // Assume order block detection logic (customize as per your EA's definition)
+            // Example: Bullish order block (close > open and significant move)
+            bool isHTBullishOB = HTobBuffer[parentOB].isBear;
+            bool isHTBearishOB = HTobBuffer[parentOB].isBear;
+
+            // Check if the 6-minute order block is within the higher timeframe candle's range
+            bool isWithinRange = (HTobBuffer[parentOB].fib50 <= this.entryPrice && this.entryPrice >= HTobBuffer[parentOB].highPrice) ? true : false;
+
+            // Additional condition: Ensure the order block types match (e.g., both bullish or both bearish)
+            // Modify this based on your order block definition
+            bool isValidOB = false;
+            if(isWithinRange == true )
+              {
+               // Example: Assume 6-minute block is bullish if high6Min > low6Min (simplified)
+               bool is6MinBearish = this.isBear; // Replace with your actual logic
+               if(is6MinBearish == false && isHTBullishOB == false)
+                 {
+                  isValidOB = true; // Bullish 6-min block within bullish HTF block
+                 }
+               else
+                  if(is6MinBearish == true && isHTBearishOB == true)
+                    {
+                     isValidOB = true; // Bearish 6-min block within bearish HTF block
+                    }
+              }
+
+            if(isValidOB == true )
+              {
+               Print("Order block on 6-min timeframe at ", TimeToString(startTime),
+                     " is part of a higher timeframe order block at ", TimeToString(HTobBuffer[parentOB].startTime));
+               this.stars = this.stars + 1;
+               this.hasParent = parentOB;
+               return true;
+              }
+           }
+      */
       return false;
 
 
@@ -203,15 +205,17 @@ struct orderBlock
       cross161    = false;
       cross238    = false;
       cross50     = false;
-      
-      if ( tslTrigger == TLS_TRIGGER_ALWAYS){
+
+      if(tslTrigger == TLS_TRIGGER_ALWAYS)
+        {
          DoTrailing = true;
-      }
+        }
 
       mitigatedLine = (highPrice + lowPrice) / 2;
-      if ( TerminalInfoInteger(TERMINAL_VPS) == 1){
-         Print("A new Order Block is detected " );
-      }
+      if(TerminalInfoInteger(TERMINAL_VPS) == 1)
+        {
+         Print("A new Order Block is detected ");
+        }
       if(isHTFOB == false)
         {
          if(isFirstOB(myIndex) == false)
@@ -222,8 +226,7 @@ struct orderBlock
             reason = ENUM_REASON_IS_PURPLE;
            }
         }
-
+      sql.insertOB(myIndex);
      }
-
   }
 //+------------------------------------------------------------------+
