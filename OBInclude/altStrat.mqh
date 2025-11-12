@@ -229,14 +229,14 @@ int CheckBreakouts()
       double sl = (rm == RANGE_SIZE_ZONE) ?  rangeLow : currentPrice - rangeSize;
       double tp = currentPrice + (currentPrice - sl) * TpMultiplier;
 
-      StopLevels adjusted = AdjustStopLevels(SymbolInfoDouble(_Symbol,  SYMBOL_ASK), sl, tp, true);
+      StopLevels adjusted = AdjustStopLevels(Ask(), sl, tp, true);
       tp = adjusted.takeProfit;
       sl = adjusted.stopLoss;
 
       if(RSI < 65 && RSI > 20)
         {
-         obj_Trade.BuyLimit(checkVolume(rangeLotSize),SymbolInfoDouble(_Symbol,  SYMBOL_ASK),_Symbol,sl, tp,ORDER_TIME_DAY,0,"Range Trade");
-         sendNotif("Range 0.01 Buy @" + DoubleToString(SymbolInfoDouble(_Symbol,  SYMBOL_ASK)) + " on " + _Symbol);
+         obj_Trade.BuyLimit(checkVolume(rangeLotSize),Ask(),_Symbol,sl, tp,ORDER_TIME_DAY,0,"Range Trade");
+         sendNotif("Range 0.01 Buy @" + DoubleToString(Ask()) + " on " + _Symbol);
          if(showDebug == true)
             Print("Buy range trade placed: Price=", currentPrice, ", SL=", sl, ", TP=", tp);
         }
@@ -268,14 +268,14 @@ int CheckBreakouts()
       double sl = (rm == RANGE_SIZE_ZONE) ? rangeLow : currentPrice - rangeSize;
       double tp = currentPrice + (currentPrice - sl) * TpMultiplier;
 
-      StopLevels adjusted = AdjustStopLevels(SymbolInfoDouble(_Symbol,  SYMBOL_BID), sl, tp, false);
+      StopLevels adjusted = AdjustStopLevels(Bid(), sl, tp, false);
       tp = adjusted.takeProfit;
       sl = adjusted.stopLoss;
 
 
       if(RSI < 65 && RSI > 20)
         {
-         obj_Trade.SellLimit(0.01,SymbolInfoDouble(_Symbol,  SYMBOL_BID),_Symbol,sl, tp,ORDER_TIME_DAY,0,"Range Trade");
+         obj_Trade.SellLimit(0.01,Bid(),_Symbol,sl, tp,ORDER_TIME_DAY,0,"Range Trade");
          Print("Sell range trade placed: Price=", currentPrice, ", SL=", sl, ", TP=", tp);
 
         }

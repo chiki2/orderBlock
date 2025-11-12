@@ -34,6 +34,9 @@ enum NoTradeReason
    ENUM_REASON_IS_PURPLE, // there is a previous OB
    ENUM_REASON_TREND_RANGE_PROTECTION, // trend is range so protection enabled
    ENUM_REASON_DONE, // done with TP or SL
+   ENUM_REASON_TRADE_ONGOING, // Trade ongoing
+   ENUM_REASON_TRADE_UPGRADE_161,
+   ENUM_REASON_TRADE_UPGRADE_238,
    ENUM_NOT_CROSSED_127,
    ENUM_NOT_CROSSED_50,
   };
@@ -165,12 +168,12 @@ struct orderBlock
 
      }
 
-   void              init(string myName,int myIndex, datetime startT,
+   void              init(int myIndex, datetime startT,
                           double highP,double lowP, double OBBdy, double lastCandlesWick, bool bear = false,
                           long oC = clrBlue, bool isHTFOB = false)
      {
 
-      name = myName;
+      name = "OB-" + TimeToString(startT, TIME_DATE|TIME_MINUTES|TIME_SECONDS) ;
       reason = ENUM_REASON_INIT;
       startTime = startT;
       index= myIndex;
@@ -192,6 +195,7 @@ struct orderBlock
       DoTrailing = false;
       OBcolor = oC;
       trendDir = trendDirection;
+      sqlID = -42;
       //stars = (trendDirection == 1 && isBear == false) ? stars + 1 : 0;
       //stars = (trendDirection == -1 && isBear == true) ? stars + 1 : 0;
       OBBody = OBBdy;
@@ -226,7 +230,10 @@ struct orderBlock
             reason = ENUM_REASON_IS_PURPLE;
            }
         }
-      sql.insertOB(myIndex);
+        
+      if(sqlID < 0)
+         sqlID = sql.insertOB(myIndex);
      }
+
   }
 //+------------------------------------------------------------------+

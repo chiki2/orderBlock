@@ -10,13 +10,13 @@
 
 input group                "======== General settings ========"
 input int uniqueMagicNumber= 1234555;
-input int lookBackPeriod   = 50; // for history
+//input int lookBackPeriod   = 50; // for history
 input double maxWickRatio  = 1.5; // wick size OB candle
 input int minBodySize      = 10; // body size OB candle
 input int minImBalanced    = 10; // minimum imbalanced
 input ENUM_TIMEFRAMES CTOB = PERIOD_M6; // current time frame
 //input bool enableHTOB      = false; // Enable Order block trading confirmation with Higher timeframe
-input ENUM_TIMEFRAMES HTOB = PERIOD_H2; // Higher time frame to check for OB
+//input ENUM_TIMEFRAMES HTOB = PERIOD_H2; // Higher time frame to check for OB
 input bool showOB          = false; // show all OrderBlock (even these with less than 3 stars)
 input bool  maxGain        = true; // Enable Max gain (TP and SL upgrade as long as the price action goes in the way of the order block)
 input int   outdatedOB     = 80; // in candles, max number of candles an order block is alive
@@ -55,8 +55,11 @@ input bool                 enableDPICT             = true; // Enable Discount / 
 input ENUM_TIMEFRAMES      dptf                    = PERIOD_H4; // timeframe to set Discount / premium Zone
 input group             "======== Display settings ========"
 input bool                 displayPP               = true; // Display Pivot Point
+input bool                 displayPremiumDiscount  = false; // Display Premium Discount zone
 input bool                 displayCPR              = true; // Display CPR 
 input bool                 EnableClock             = false;// Display clock trade server
+input bool                 displayMacro            = false;// Display ICT Macro
+input bool                 displayICTLiquidity     = false;// Display ICT Liquidity level
 input group             "======== Liquidity Sweep prevention ========"
 input int                  lookbackBars = 10;         // Swing detection sensitivity
 input double               wickTolerance = 2;      // Tolerance for wick deviation in points
