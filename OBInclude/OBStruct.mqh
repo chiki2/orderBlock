@@ -30,6 +30,8 @@ enum NoTradeReason
    ENUM_REASON_IS_NOT_DISCOUNT, // Bullish Order Block is not in the Discount zone
    ENUM_REASON_IS_COUNTER_BULLISH, // counter trend
    ENUM_REASON_IS_COUNTER_BEARISH, // counter trend
+   ENUM_REASON_IS_COUNTER_HT_BULLISH, // counter HTOB trend
+   ENUM_REASON_IS_COUNTER_HT_BEARISH, // counter HTOB trend
    ENUM_REASON_IS_LOW_IMBALANCE, // low imbalance
    ENUM_REASON_IS_PURPLE, // there is a previous OB
    ENUM_REASON_TREND_RANGE_PROTECTION, // trend is range so protection enabled
@@ -51,9 +53,11 @@ struct orderBlock
    datetime          entryTime;
    double            highPrice;
    double            lowPrice;
+   bool              hasInducement;
    double            imbalancePrice;
    bool              isMitigated;
    bool              isBOS;
+   bool              hasChoch;
    bool              DoTrailing;
    bool              DoRevengeTrailing;
    bool              sweepRevenge;
@@ -173,7 +177,7 @@ struct orderBlock
                           long oC = clrBlue, bool isHTFOB = false)
      {
 
-      name = "OB-" + TimeToString(startT, TIME_DATE|TIME_MINUTES|TIME_SECONDS) ;
+      name = "ICT_OB" + TimeToString(startT, TIME_DATE|TIME_MINUTES|TIME_SECONDS) ;
       reason = ENUM_REASON_INIT;
       startTime = startT;
       index= myIndex;
@@ -186,9 +190,11 @@ struct orderBlock
       lightBuzzTicket = 0;
       sweepRevenge= false;
       isMitigated = false;
+      hasInducement= false;
       isImbalanced= false;
       isLightbuzz = false;
       is1R        = false;
+      hasChoch    = false;
       hasParent = -1;
       isDone=false;
       isBOS= false;
@@ -231,8 +237,14 @@ struct orderBlock
            }
         }
         
-      if(sqlID < 0)
-         sqlID = sql.insertOB(myIndex);
+      if ( hasInducement == false )
+          displayInducement();
+        
+      if(sqlID == -42)
+         sqlID = sql.insertOB(obBuffer[myIndex]);
+         int size = ArraySize(reasonBuffer);
+         ArrayResize(reasonBuffer, size + 1);
+         reasonBuffer[size] = obBuffer[myIndex].name + "-StatusReason";
      }
 
   }
