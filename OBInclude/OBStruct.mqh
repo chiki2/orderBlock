@@ -71,6 +71,7 @@ struct orderBlock
    int               stars;
    long              OBcolor;
    bool              isDone;
+   bool              isStat; // for ob meter
    double            highLiquid;
    double            lowLiquid;
    double            OBBody, OBWick;
@@ -195,6 +196,7 @@ struct orderBlock
       isLightbuzz = false;
       is1R        = false;
       hasChoch    = false;
+      isStat      = false;
       hasParent = -1;
       isDone=false;
       isBOS= false;
