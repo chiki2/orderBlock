@@ -1,0 +1,44 @@
+#!/bin/bash
+
+DIR="${1:-.}"
+OUTPUT="extracted_quotes.txt"
+> "$OUTPUT"
+
+extract() {
+    awk -v BINMODE=1 '
+        {
+            while (match($0, /"([^"\\]|\\.)*"/)) {
+                print substr($0, RSTART, RLENGTH)
+                $0 = substr($0, RSTART + RLENGTH)
+            }
+        }
+    '
+}
+
+find "$DIR" -type f \( -name "*.mq5" -o -name "*.mqh" -o -name "*.mql5" \) -print0 |
+while IFS= read -r -d '' file; do
+
+    # Detect encoding
+    encoding=$(file -b --mime-encoding "$file")
+
+    case "$encoding" in
+        utf-16le|utf-16be)
+            content=$(iconv -f "$encoding" -t utf-8 "$file")
+            ;;
+        *)
+            content=$(cat "$file")
+            ;;
+    esac
+
+    # Extract
+    mapfile -t lines < <(printf "%s" "$content" | LC_ALL=C extract)
+
+    (( ${#lines[@]} == 0 )) && continue
+
+    echo "=== $file ===" >> "$OUTPUT"
+    printf "%s\n" "${lines[@]}" >> "$OUTPUT"
+    echo "" >> "$OUTPUT"
+
+done
+
+echo "Done → $OUTPUT"
