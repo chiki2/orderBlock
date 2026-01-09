@@ -21,34 +21,69 @@ bool testFibonacci()
 
 // Retracement
    tests_performed++;
-   if(0.68 != getFibLevel(false, 100, 0, 0.68))
+   double res = 0.0;
+   // fibo 68% on a bearish ob
+   if(68.0 != getFibLevel(true, 100, 0, 0.68))
       return false;
    tests_passed++;
+   
    tests_performed++;
-   if(0.68 != getFibLevel(true, 100, 0, 0.68))
+   // fibo 68% on a bullish ob
+   if(68.0 != getFibLevel(false, 0, 100, 0.68))
       return false;
    tests_passed++;
+   
    tests_performed++;
-   if(0.50 != getFibLevel(false, 100, 0, 0.50))
+   if(50.0 != getFibLevel(false, 100, 0, 0.50))
       return false;
    tests_passed++;
+   
    tests_performed++;
-   if(0.50 != getFibLevel(true, 100, 0, 0.50))
+   if(50.0 != getFibLevel(true, 100, 0, 0.50))
       return false;
    tests_passed++;
-
+   
 // Extension
    tests_performed++;
-   if(1.27 != getFibLevel(false, 100, 0, 1.27))
+   if(127.0 != getFibLevel(false, 100, 0, 1.27))
       return false;
    tests_passed++;
+   
    tests_performed++;
-   if(1.27 != getFibLevel(true, 100, 0, 1.27))
+   if(127.0 != getFibLevel(true, 0, 100, 1.27))
+      return false;
+   tests_passed++;
+   
+   
+   return true;
+  }
+  
+bool testRRR(){
+   tests_performed++;
+   orderBlock obTest[];
+   ArrayResize(obTest, 1);
+   
+   // bullish ob 
+   obTest[0].entryPrice = getFibLevel(false, 4100, 3990, 0.618);
+   obTest[0].stopLoss   = getFibLevel(false, 4100, 3990, -0.35);
+   obTest[0].getTPByRRR(1.0);
+   
+   if ( obTest[0].takeProfit != 4112.54)
+      return false;
+   tests_passed++;
+   
+   // bearish ob 
+   tests_performed++;
+   obTest[0].entryPrice = getFibLevel(true, 4100, 3990, 0.618);
+   obTest[0].stopLoss   = getFibLevel(true, 3990, 4100, -0.35);
+   obTest[0].getTPByRRR(1.0);
+   
+   if ( obTest[0].takeProfit != 4164.46 )
       return false;
    tests_passed++;
    
    return true;
-  }
+}
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -60,7 +95,10 @@ bool TestHelpers(const string test_name)
    PrintFormat("%s: Group test 1: Fibonacci",test_name);
    if(!testFibonacci())
       return(false);
-
+   PrintFormat("%s: Group test 2: RRR",test_name);
+   if(!testRRR())
+      return(false);
+         
    return true;
   }
 
