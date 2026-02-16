@@ -7,10 +7,14 @@
 #include "../OBInclude/globals.mqh"
 #include "../OBInclude/helpers.mqh"
 #include "../OBInclude/drawOB.mqh"
-#include "../OBInclude/OBStruct.mqh"
+#include "../OBInclude/types.mqh"
 
 int tests_performed=0;
 int tests_passed=0;
+
+#include "TestHelpers.mqh"
+#include "TestLangs.mqh"
+#include "TestOBStruct.mqh"
 
 
 //+------------------------------------------------------------------+
@@ -60,7 +64,7 @@ bool testFibonacci()
   
 bool testRRR(){
    tests_performed++;
-   orderBlock obTest[];
+   cOrderBlock obTest[];
    ArrayResize(obTest, 1);
    
    // bullish ob 
@@ -108,10 +112,34 @@ bool TestHelpers(const string test_name)
 void TestQueue()
   {
    string test_name="";
-//--- In Helpers.mqh, test fib functions
+//--- In Helpers.mqh, test fib functions (original tests)
    test_name="Test Fibonacci functions";
    if(TestHelpers(test_name) == false)
       PrintFormat("%s failed",test_name);
+
+//--- Extended helpers tests (TestHelpers.mqh)
+   test_name="Test Helpers extended";
+   PrintFormat("%s started", test_name);
+   if(!RunHelpersTests(test_name))
+      PrintFormat("%s failed", test_name);
+   else
+      PrintFormat("%s passed", test_name);
+
+//--- langs.mqh: T() translation and GetEnumDescription() (TestLangs.mqh)
+   test_name="Test Langs";
+   PrintFormat("%s started", test_name);
+   if(!RunLangsTests(test_name))
+      PrintFormat("%s failed", test_name);
+   else
+      PrintFormat("%s passed", test_name);
+
+//--- OBStruct.mqh: pure struct methods (TestOBStruct.mqh)
+   test_name="Test OBStruct";
+   PrintFormat("%s started", test_name);
+   if(!RunOBStructTests(test_name))
+      PrintFormat("%s failed", test_name);
+   else
+      PrintFormat("%s passed", test_name);
   }
 //+------------------------------------------------------------------+
 //| Script program start function                                    |
