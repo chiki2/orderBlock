@@ -119,6 +119,14 @@ Currency=USD
 ShutdownTerminal=1
 EOF
 
+# Kill any existing MT5 instance — a running terminal hands off the config
+# to itself and exits immediately, so we must start fresh
+if pgrep -f "terminal64" > /dev/null 2>&1; then
+  yellow "  Killing existing MT5 instance..."
+  pkill -f "terminal64" 2>/dev/null || true
+  sleep 3   # let it write its state before dying
+fi
+
 START_TIME=$(date +%s)
 WINEPREFIX="$WINEPREFIX" "$WINE" "$MT5_EXE" /portable "/config:$CONFIG_WIN" 2>/dev/null
 MT5_EXIT=$?
@@ -126,6 +134,12 @@ END_TIME=$(date +%s)
 WALL_TIME=$(( END_TIME - START_TIME ))
 
 echo "  MT5 exited after ${WALL_TIME}s (exit code: $MT5_EXIT)"
+
+# If wine exited suspiciously fast (<10s) the test likely didn't run
+if [[ $WALL_TIME -lt 10 ]]; then
+  red "  WARNING: MT5 exited in ${WALL_TIME}s — backtest probably didn't run."
+  red "  Check that no other MT5 instance is running and retry."
+fi
 
 # ── Step 3: Parse results ───────────────────────────────────────────────────
 bold ""
@@ -135,13 +149,26 @@ bold "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 TODAY=$(date +%Y%m%d)
 
-# Find most recently modified agent log for today
+# Find the agent log modified AFTER our test started (not a stale one from today)
 AGENT_LOG=$(find "$MT5_DIR/Tester" -name "${TODAY}.log" -path "*/Agent-127*" \
+            -newer <(date -d "@$START_TIME" +%Y%m%d%H%M%S 2>/dev/null || echo /dev/null) \
             -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+
+# Fallback: if the -newer trick didn't work, take the most recently modified
+if [[ -z "$AGENT_LOG" ]]; then
+  AGENT_LOG=$(find "$MT5_DIR/Tester" -name "${TODAY}.log" -path "*/Agent-127*" \
+              -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+fi
 
 if [[ -z "$AGENT_LOG" || ! -f "$AGENT_LOG" ]]; then
   red "No agent log found for $TODAY. Did the test run?"
   exit 1
+fi
+
+# Warn if log predates our test start
+LOG_MTIME=$(stat -c %Y "$AGENT_LOG" 2>/dev/null || echo 0)
+if [[ $LOG_MTIME -lt $START_TIME ]]; then
+  yellow "  WARNING: log predates our run — results may be from a previous backtest."
 fi
 
 echo "  Log: $AGENT_LOG"
@@ -168,20 +195,22 @@ WIN_RATE="n/a"
 OB_CSV=$(find "$MT5_DIR/Tester" -name "ob_data_${SYMBOL}*.csv" \
          -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
 if [[ -n "$OB_CSV" && -f "$OB_CSV" ]]; then
-  WIN_RATE=$(python3 << PYEOF
-import csv
+  WIN_RATE=$(python3 - "$OB_CSV" << 'PYEOF'
+import csv, sys
 wins = losses = 0
 try:
-    with open("$OB_CSV") as f:
+    with open(sys.argv[1]) as f:
         for row in csv.DictReader(f):
-            o = row.get('outcome','').strip()
-            if o == 'WIN':   wins += 1
-            elif o in ('LOSS','EXPIRED'): losses += 1
-total = wins + losses
-if total > 0:
-    print(f"{wins}/{total} ({100*wins/total:.0f}%)")
-else:
+            o = row.get('outcome', '').strip()
+            if o == 'WIN':
+                wins += 1
+            elif o in ('LOSS', 'EXPIRED'):
+                losses += 1
+except Exception as e:
     print("n/a")
+    sys.exit(0)
+total = wins + losses
+print(f"{wins}/{total} ({100*wins/total:.0f}%)" if total > 0 else "n/a")
 PYEOF
 )
 fi
