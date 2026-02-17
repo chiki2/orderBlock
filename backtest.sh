@@ -256,7 +256,7 @@ elif [[ -f "$BASELINE_JSON" ]]; then
   bold "  ┌─────────────────────────────────────────┐"
   bold "  │     DELTA vs BASELINE                   │"
   bold "  └─────────────────────────────────────────┘"
-  python3 << 'PYEOF'
+  python3 - "$LAST_JSON" "$BASELINE_JSON" << 'PYEOF'
 import json, sys
 
 def delta(new, old, key, fmt=".0f", pct=False):
@@ -272,17 +272,17 @@ def delta(new, old, key, fmt=".0f", pct=False):
     pct_str = f"({100*d/float(o):.1f}%)" if pct and o != 0 else ""
     print(f"  {color}{arrow}{reset}  {key:<22} {format(float(o), fmt)} → {format(float(n), fmt)} {color}{pct_str}{reset}")
 
-with open("/home/charles/.mt5/drive_c/Program Files/MetaTrader 5/MQL5/Experts/orderBlock/backtest_last.json") as f:
+with open(sys.argv[1]) as f:
     new = json.load(f)
-with open("/home/charles/.mt5/drive_c/Program Files/MetaTrader 5/MQL5/Experts/orderBlock/backtest_baseline.json") as f:
+with open(sys.argv[2]) as f:
     old = json.load(f)
 
-delta(new, old, "balance",   ".2f", pct=True)
-delta(new, old, "ontester",  ".0f", pct=True)
-delta(new, old, "traded",    ".0f", pct=True)
-delta(new, old, "overdue",   ".0f")
-delta(new, old, "mitigated", ".0f")
-delta(new, old, "no_mss",    ".0f")
+delta(new, old, "balance",     ".2f", pct=True)
+delta(new, old, "ontester",    ".0f", pct=True)
+delta(new, old, "traded",      ".0f", pct=True)
+delta(new, old, "overdue",     ".0f")
+delta(new, old, "mitigated",   ".0f")
+delta(new, old, "no_mss",      ".0f")
 delta(new, old, "wall_time_s", ".0f")
 PYEOF
 else
