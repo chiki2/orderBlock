@@ -1236,6 +1236,36 @@ bool cOrderBlock::isAllGood(int i)
       return false;
      }
 
+   // #21 Spread cap: skip entry if spread is too wide
+   if(inpMaxSpread > 0 && spread > inpMaxSpread)
+     {
+      reason = ENUM_REASON_SPREAD_TOO_WIDE;
+      return false;
+     }
+
+   // #23 Max simultaneous positions per direction
+   if(inpMaxPositionsPerDir > 0)
+     {
+      int sameDir = 0;
+      for(int j = 0; j < ArraySize(obBuffer); j++)
+         if(j != i && obBuffer[j].tradeTicket != INVALID_TICKET && obBuffer[j].isBear == isBear)
+            sameDir++;
+      if(sameDir >= inpMaxPositionsPerDir)
+        {
+         reason = ENUM_REASON_TRADE_ONGOING;
+         return false;
+        }
+     }
+
+   // #24 Daily open bias: only trade in the direction price is vs daily open
+   if(inpDailyBiasEnabled)
+     {
+      double dailyOpen = iOpen(_Symbol, PERIOD_D1, 0);
+      bool bullishBias = (bidPrice > dailyOpen);
+      if(isBear == false && !bullishBias) { reason = ENUM_REASON_IS_COUNTER_BEARISH;  return false; }
+      if(isBear == true  &&  bullishBias) { reason = ENUM_REASON_IS_COUNTER_BULLISH;  return false; }
+     }
+
    allChecks  = true;
    finalCheck = 11;
    return true;
