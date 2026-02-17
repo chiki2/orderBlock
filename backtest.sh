@@ -17,15 +17,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MT5_ROOT="/home/charles/.mt5"
 MT5_DIR="$MT5_ROOT/drive_c/Program Files/MetaTrader 5"
 MT5_EXE="$MT5_DIR/terminal64.exe"
-EDITOR_EXE="$MT5_DIR/MetaEditor64.exe"
 WINEPREFIX="$MT5_ROOT"
 WINE="$(which wine)"
 
-EA_SRC_WIN='C:\Program Files\MetaTrader 5\MQL5\Experts\orderBlock\OrderBlock.mqproj'
 EA_EX5="$MT5_DIR/MQL5/Experts/orderBlock/OrderBlock.ex5"
-CONFIG_PATH="$MT5_DIR/Config/backtest.ini"
-CONFIG_WIN='C:\Program Files\MetaTrader 5\Config\backtest.ini'
-METAEDITOR_LOG="$MT5_DIR/logs/metaeditor.log"
+# Write config to a space-free path to avoid wine quoting issues with /config: arg
+CONFIG_PATH="$MT5_ROOT/drive_c/MT5_backtest.ini"
+CONFIG_WIN='C:\MT5_backtest.ini'
 
 LAST_JSON="$SCRIPT_DIR/backtest_last.json"
 BASELINE_JSON="$SCRIPT_DIR/backtest_baseline.json"
@@ -65,55 +63,81 @@ except Exception:
 PYEOF
 }
 
-# ── Step 1: Compile ─────────────────────────────────────────────────────────
+# ── Paths for compile ───────────────────────────────────────────────────────
+EA_SRC="$MT5_DIR/MQL5/Experts/orderBlock/OrderBlock.mq5"
+EDITOR_EXE="$MT5_DIR/MetaEditor64.exe"
+METAEDITOR_LOG="$MT5_DIR/logs/metaeditor.log"
+
+compile_ea() {
+  # Compile the EA via MetaEditor GUI + xdotool F7 keypress:
+  # 1. Kill any existing MetaEditor, launch a fresh GUI instance
+  # 2. Wait for the window to appear (MetaEditor opens the last-used file)
+  # 3. Activate the window and send F7 to trigger compilation
+  # 4. Wait for .ex5 to appear
+  # Returns 0 on success, 1 on failure
+
+  pkill -f "MetaEditor64" 2>/dev/null || true
+  sleep 1
+
+  # Launch MetaEditor GUI — suppress output to avoid pipe breakage
+  # Must use set +e because wine produces a large volume of fixme output
+  (set +e; WINEPREFIX="$WINEPREFIX" "$WINE" "$EDITOR_EXE" > /tmp/me_gui.log 2>&1) &
+
+  # Wait for the MetaEditor window to appear (up to 30s)
+  local WID=""
+  for _ in $(seq 1 10); do
+    sleep 3
+    WID=$(xdotool search --name "MetaEditor" 2>/dev/null | head -1)
+    [[ -n "$WID" ]] && break
+  done
+
+  if [[ -z "$WID" ]]; then
+    pkill -f "MetaEditor64" 2>/dev/null || true
+    return 1
+  fi
+
+  # Activate window and send F7 to compile
+  xdotool windowraise "$WID" 2>/dev/null || true
+  xdotool windowactivate --sync "$WID" 2>/dev/null || true
+  sleep 1
+  xdotool key F7 2>/dev/null || true
+
+  # Wait for .ex5 to appear (up to 30s)
+  local ok=1
+  for _ in $(seq 1 10); do
+    sleep 3
+    if [[ -f "$EA_EX5" ]]; then ok=0; break; fi
+  done
+
+  pkill -f "MetaEditor64" 2>/dev/null || true
+  return $ok
+}
+
+# ── Step 1: Ensure EA is compiled ────────────────────────────────────────────
 bold "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-bold " Step 1/3: Compiling EA with MetaEditor"
+bold " Step 1/3: Checking EA binary"
 bold "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# Delete the .ex5 so MetaEditor is forced to recompile (it skips if ex5 is newer)
-rm -f "$EA_EX5"
-
-# MetaEditor always appends to logs/metaeditor.log — record size before compile
-PRE_LOG_SIZE=$(stat -c %s "$METAEDITOR_LOG" 2>/dev/null || echo 0)
-
-WINEPREFIX="$WINEPREFIX" "$WINE" "$EDITOR_EXE" \
-  "/compile:$EA_SRC_WIN" \
-  2>/dev/null
-sleep 3   # give MetaEditor time to write the result line
-
-# Read only the new lines appended during this compile
-COMPILE_TEXT=$(python3 - "$METAEDITOR_LOG" "$PRE_LOG_SIZE" << 'PYEOF'
-import sys, codecs
-path, offset = sys.argv[1], int(sys.argv[2])
-try:
-    with codecs.open(path, 'r', 'utf-16') as f:
-        full = f.read()
-    # UTF-16 file: byte offset doesn't map to char offset cleanly;
-    # just print everything and let grep find the last Compile line
-    print(full)
-except Exception:
-    with open(path, errors='replace') as f:
-        print(f.read().replace('\x00', ''))
-PYEOF
-)
-
-# Find the last Compile result line
-COMPILE_LINE=$(echo "$COMPILE_TEXT" | grep "	Compile	" | tail -1)
-if [[ -n "$COMPILE_LINE" ]]; then
-  ERRORS=$(echo "$COMPILE_LINE"   | grep -oP '\K\d+(?= error)')
-  WARNINGS=$(echo "$COMPILE_LINE" | grep -oP '\K\d+(?= warning)')
-  ERRORS=${ERRORS:-0}
-  WARNINGS=${WARNINGS:-0}
-  if [[ "$ERRORS" -gt 0 ]]; then
-    red "Compile FAILED: $ERRORS error(s), $WARNINGS warning(s)"
-    red "$COMPILE_LINE"
-    exit 1
+if [[ -f "$EA_EX5" ]]; then
+  # Check if source is newer than binary (stale)
+  if [[ "$EA_SRC" -nt "$EA_EX5" ]]; then
+    yellow "  Source is newer than binary — attempting recompile..."
+    if compile_ea; then
+      green "  Recompiled successfully"
+    else
+      yellow "  Recompile failed — running with existing binary (may be outdated)"
+    fi
   else
-    green "Compile OK — $ERRORS errors, $WARNINGS warning(s)"
-    echo "  $COMPILE_LINE"
+    green "  OrderBlock.ex5 is up to date"
   fi
 else
-  yellow "No compile result found in metaeditor.log — assuming EA is up to date"
+  yellow "  No .ex5 found — attempting to compile with MetaEditor..."
+  if compile_ea; then
+    green "  Compiled successfully"
+  else
+    red "  Compile failed. Please open MetaEditor and press F7 to compile OrderBlock.mq5, then re-run this script."
+    exit 1
+  fi
 fi
 
 # ── Step 2: Write tester config + run backtest ─────────────────────────────
@@ -151,47 +175,62 @@ if pgrep -f "terminal64" > /dev/null 2>&1; then
 fi
 
 START_TIME=$(date +%s)
+TODAY=$(date +%Y%m%d)
+AGENT_CANDIDATES=$(find "$MT5_DIR/Tester" -name "${TODAY}.log" -path "*/Agent-127*" 2>/dev/null)
 
-# Launch MT5 detached — polling for completion is more reliable than blocking
-WINEPREFIX="$WINEPREFIX" "$WINE" "$MT5_EXE" /portable '/config:C:\Program Files\MetaTrader 5\Config\backtest.ini' \
+# Record pre-run byte size of each agent log to detect new content only
+declare -A LOG_OFFSET
+for f in $AGENT_CANDIDATES; do
+  LOG_OFFSET["$f"]=$(stat -c %s "$f" 2>/dev/null || echo 0)
+done
+
+# Launch MT5 detached — MT5 terminal will hand off to metatester64 and exit
+WINEPREFIX="$WINEPREFIX" "$WINE" "$MT5_EXE" /portable "/config:$CONFIG_WIN" \
   > /tmp/mt5_wine.log 2>&1 &
 WINE_PID=$!
 echo "  MT5 launched (wine pid $WINE_PID) — polling for completion..."
 
-# Poll until log shows "thread finished" or wine process dies, max 10 minutes
+# Poll until agent log shows "thread finished" in NEW content, max 10 minutes
+# Note: MT5 terminal may exit early (hands off to metatester64); don't break on its exit
 TIMEOUT=600
 ELAPSED=0
 DONE=false
-TODAY_LOG_DIR="$MT5_DIR/Tester"
+FRESH_LOG=""
 while [[ $ELAPSED -lt $TIMEOUT ]]; do
   sleep 5
   ELAPSED=$(( $(date +%s) - START_TIME ))
 
-  # Check for completion marker in any agent log written after our start
-  # Check all agent logs modified after our start
+  # Look for agent logs (may include new ones created this run)
   while IFS= read -r candidate; do
     MTIME=$(stat -c %Y "$candidate" 2>/dev/null || echo 0)
+    # Only consider logs modified AFTER our test started
     if [[ $MTIME -le $START_TIME ]]; then continue; fi
-    CONTENT=$(python3 -c "
+    OFFSET=${LOG_OFFSET["$candidate"]:-0}
+    # Read only new content (bytes after the pre-run file size)
+    NEW_CONTENT=$(python3 -c "
 import codecs, sys
+path, offset = sys.argv[1], int(sys.argv[2])
 try:
-    with codecs.open(sys.argv[1], 'r', 'utf-16') as f: print(f.read())
-except:
-    with open(sys.argv[1], errors='replace') as f: print(f.read().replace('\x00',''))
-" "$candidate" 2>/dev/null)
-    if echo "$CONTENT" | grep -q "thread finished"; then
+    with open(path, 'rb') as raw:
+        raw.read(offset)  # skip already-seen bytes
+        rest = raw.read()
+    print(rest.decode('utf-16-le', errors='replace'))
+except Exception:
+    try:
+        with codecs.open(path, 'r', 'utf-16') as f:
+            f.read(offset // 2)
+            print(f.read())
+    except Exception:
+        with open(path, 'rb') as f:
+            f.seek(offset)
+            print(f.read().decode('latin-1', errors='replace'))
+" "$candidate" "$OFFSET" 2>/dev/null)
+    if echo "$NEW_CONTENT" | grep -q "thread finished"; then
       FRESH_LOG="$candidate"
       DONE=true
       break 2
     fi
-  done < <(find "$TODAY_LOG_DIR" -name "$(date +%Y%m%d).log" -path "*/Agent-127*" 2>/dev/null)
-
-  # Also stop if wine process has exited (MT5 closed itself)
-  if ! kill -0 "$WINE_PID" 2>/dev/null; then
-    sleep 3  # give log a moment to flush
-    DONE=true
-    break
-  fi
+  done < <(find "$MT5_DIR/Tester" -name "${TODAY}.log" -path "*/Agent-127*" 2>/dev/null)
 
   printf "  ... %ds elapsed\r" "$ELAPSED"
 done
@@ -214,14 +253,8 @@ bold "━━━━━━━━━━━━━━━━━━━━━━━━�
 bold " Step 3/3: Parsing results"
 bold "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-TODAY=$(date +%Y%m%d)
-
-# Find the agent log modified AFTER our test started (not a stale one from today)
-AGENT_LOG=$(find "$MT5_DIR/Tester" -name "${TODAY}.log" -path "*/Agent-127*" \
-            -newer <(date -d "@$START_TIME" +%Y%m%d%H%M%S 2>/dev/null || echo /dev/null) \
-            -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
-
-# Fallback: if the -newer trick didn't work, take the most recently modified
+# Use the log identified by the polling loop, or fall back to most recent
+AGENT_LOG="$FRESH_LOG"
 if [[ -z "$AGENT_LOG" ]]; then
   AGENT_LOG=$(find "$MT5_DIR/Tester" -name "${TODAY}.log" -path "*/Agent-127*" \
               -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
@@ -230,12 +263,6 @@ fi
 if [[ -z "$AGENT_LOG" || ! -f "$AGENT_LOG" ]]; then
   red "No agent log found for $TODAY. Did the test run?"
   exit 1
-fi
-
-# Warn if log predates our test start
-LOG_MTIME=$(stat -c %Y "$AGENT_LOG" 2>/dev/null || echo 0)
-if [[ $LOG_MTIME -lt $START_TIME ]]; then
-  yellow "  WARNING: log predates our run — results may be from a previous backtest."
 fi
 
 echo "  Log: $AGENT_LOG"
