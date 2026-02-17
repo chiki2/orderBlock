@@ -116,6 +116,7 @@ bool cOrderBlock::hasOppositeOB(bool isOpposite)
       if(tradeTicket != INVALID_TICKET)
         {
          CancelPendingIfExists(tradeTicket);
+         tradeTicket = INVALID_TICKET;
         }
 
       return true;
