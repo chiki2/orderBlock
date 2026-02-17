@@ -1214,14 +1214,6 @@ bool cOrderBlock::isAllGood(int i)
       return false;
      }
 
-// BYPASS EXPERIMENTAL FOR BIG FUCKING WICK ( BFW )
-   if(isBFWMode(i) == true)
-     {
-      obBuffer[i].isLowerMss = true;
-      obBuffer[i].allChecks  = true;
-      setOBOrder(i);
-     }
-
    if(topImpValid == false)
      {
       return false;
