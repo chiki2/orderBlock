@@ -342,6 +342,218 @@ bool testGetTPByRRREdgeCases() {
 }
 
 //+------------------------------------------------------------------+
+//| GetTrendAngle — pure atan2-based angle from two bar/price points|
+//+------------------------------------------------------------------+
+bool testGetTrendAngle() {
+    // Horizontal line: dy=0  -> angle = 0°
+    ASSERT_DBL(GetTrendAngle(0, 0, 10, 0),   0.0,  "GetTrendAngle: horizontal -> 0°");
+
+    // 45° upward: dy == dx
+    ASSERT_DBL(GetTrendAngle(0, 0, 10, 10),  45.0, "GetTrendAngle: 45° up");
+
+    // 45° downward: dy == -dx
+    ASSERT_DBL(GetTrendAngle(0, 10, 10, 0), -45.0, "GetTrendAngle: 45° down");
+
+    // Vertical up: dx=0, dy>0  -> 90°
+    ASSERT_DBL(GetTrendAngle(0, 0,  0, 10),  90.0, "GetTrendAngle: vertical up -> 90°");
+
+    // Vertical down: dx=0, dy<0  -> -90°
+    ASSERT_DBL(GetTrendAngle(0, 10, 0,  0), -90.0, "GetTrendAngle: vertical down -> -90°");
+
+    // Symmetry: swapping start/end negates the angle
+    tests_performed++;
+    double a1 = GetTrendAngle(0, 0, 5, 3);
+    double a2 = GetTrendAngle(0, 3, 5, 0);
+    if(MathAbs(a1 + a2) > HELPERS_EPS) {
+        PrintFormat("  FAIL [GetTrendAngle symmetry]: a1=%.4f  a2=%.4f", a1, a2);
+        return false;
+    }
+    tests_passed++;
+
+    return true;
+}
+
+
+//+------------------------------------------------------------------+
+//| ArrayPopFront — removes the first element of a double array     |
+//+------------------------------------------------------------------+
+bool testArrayPopFront() {
+    // Guard: size == 1  -> no-op (size stays 1, value unchanged)
+    double arr1[];
+    ArrayResize(arr1, 1);
+    arr1[0] = 99.0;
+    ArrayPopFront(arr1);
+    ASSERT_INT(ArraySize(arr1), 1,    "ArrayPopFront: size=1 no-op size");
+    ASSERT_DBL(arr1[0],         99.0, "ArrayPopFront: size=1 no-op value");
+
+    // Size == 2: front removed, second becomes first
+    double arr2[];
+    ArrayResize(arr2, 2);
+    arr2[0] = 10.0;
+    arr2[1] = 20.0;
+    ArrayPopFront(arr2);
+    ASSERT_INT(ArraySize(arr2), 1,    "ArrayPopFront: size=2 -> size=1");
+    ASSERT_DBL(arr2[0],         20.0, "ArrayPopFront: size=2 -> arr[0]==20");
+
+    // Size == 5: front removed, remaining 4 shifted
+    double arr5[];
+    ArrayResize(arr5, 5);
+    arr5[0] = 1.0;  arr5[1] = 2.0;  arr5[2] = 3.0;
+    arr5[3] = 4.0;  arr5[4] = 5.0;
+    ArrayPopFront(arr5);
+    ASSERT_INT(ArraySize(arr5), 4,   "ArrayPopFront: size=5 -> size=4");
+    ASSERT_DBL(arr5[0],         2.0, "ArrayPopFront: arr[0] shifted to 2");
+    ASSERT_DBL(arr5[1],         3.0, "ArrayPopFront: arr[1] shifted to 3");
+    ASSERT_DBL(arr5[3],         5.0, "ArrayPopFront: arr[3] == 5");
+
+    // Two successive pops
+    ArrayPopFront(arr5);
+    ASSERT_INT(ArraySize(arr5), 3,   "ArrayPopFront: second pop -> size=3");
+    ASSERT_DBL(arr5[0],         3.0, "ArrayPopFront: second pop -> arr[0]==3");
+
+    return true;
+}
+
+
+//+------------------------------------------------------------------+
+//| FormatTextWithLineBreaks — pure word-wrap into a string array   |
+//|                                                                  |
+//| Returns a string-encoded line count; fills lines[] output array.|
+//+------------------------------------------------------------------+
+bool testFormatTextWithLineBreaks() {
+    string lines[];
+
+    // --- Single short word: must produce 1 line
+    string ret1 = FormatTextWithLineBreaks("hi", 1000, 10, lines);
+    ASSERT_INT(StringToInteger(ret1), 1, "FormatText: single word -> 1 line");
+    ASSERT_INT(ArraySize(lines),      1, "FormatText: lines[] size == 1");
+    ASSERT_STR(lines[0], "hi",           "FormatText: lines[0] == 'hi'");
+
+    // --- Two short words that fit together on one line
+    //     maxWidth=1000, fontSize=10: maxCharsPerLine = (1000-20)/(10*0.55) = 178
+    //     "hello world" (11 chars) <= 178  -> 1 line
+    ArrayResize(lines, 0);
+    string ret2 = FormatTextWithLineBreaks("hello world", 1000, 10, lines);
+    ASSERT_INT(StringToInteger(ret2), 1, "FormatText: 'hello world' fits on 1 line");
+    ASSERT_INT(ArraySize(lines),      1, "FormatText: lines[] size == 1 for 2-word fit");
+
+    // --- Words that require wrapping
+    //     maxWidth=100, fontSize=10: maxCharsPerLine = (100-20)/(10*0.55) = 14
+    //     "hello world foo" -> "hello world"(11)<=14 fits, then "foo" wraps -> 2 lines
+    ArrayResize(lines, 0);
+    string ret3 = FormatTextWithLineBreaks("hello world foo", 100, 10, lines);
+    ASSERT_INT(StringToInteger(ret3), 2, "FormatText: wrapping -> 2 lines");
+    ASSERT_INT(ArraySize(lines),      2, "FormatText: lines[] size == 2 after wrap");
+    ASSERT_STR(lines[0], "hello world",  "FormatText: first line == 'hello world'");
+    ASSERT_STR(lines[1], "foo",          "FormatText: second line == 'foo'");
+
+    // --- Return value matches ArraySize
+    tests_performed++;
+    if(StringToInteger(ret3) != ArraySize(lines)) {
+        PrintFormat("  FAIL [FormatText return/size mismatch]: ret=%s size=%d",
+                    ret3, ArraySize(lines));
+        return false;
+    }
+    tests_passed++;
+
+    return true;
+}
+
+
+//+------------------------------------------------------------------+
+//| getUninitReasonText — pure switch: int reason code -> string    |
+//+------------------------------------------------------------------+
+bool testGetUninitReasonText() {
+    // Each known reason constant must produce a non-empty string
+    // containing the expected keyword fragment.
+    tests_performed++;
+    if(StringFind(getUninitReasonText(REASON_ACCOUNT),     "Account") < 0) {
+        PrintFormat("  FAIL [getUninitReasonText REASON_ACCOUNT]: got '%s'",
+                    getUninitReasonText(REASON_ACCOUNT));
+        return false;
+    }
+    tests_passed++;
+
+    tests_performed++;
+    if(StringFind(getUninitReasonText(REASON_CHARTCHANGE), "Symbol or timeframe") < 0) {
+        PrintFormat("  FAIL [getUninitReasonText REASON_CHARTCHANGE]: got '%s'",
+                    getUninitReasonText(REASON_CHARTCHANGE));
+        return false;
+    }
+    tests_passed++;
+
+    tests_performed++;
+    if(StringFind(getUninitReasonText(REASON_CHARTCLOSE),  "Chart was closed") < 0) {
+        PrintFormat("  FAIL [getUninitReasonText REASON_CHARTCLOSE]: got '%s'",
+                    getUninitReasonText(REASON_CHARTCLOSE));
+        return false;
+    }
+    tests_passed++;
+
+    tests_performed++;
+    if(StringFind(getUninitReasonText(REASON_PARAMETERS),  "Input-parameter") < 0) {
+        PrintFormat("  FAIL [getUninitReasonText REASON_PARAMETERS]: got '%s'",
+                    getUninitReasonText(REASON_PARAMETERS));
+        return false;
+    }
+    tests_passed++;
+
+    tests_performed++;
+    if(StringFind(getUninitReasonText(REASON_REMOVE),      "removed from chart") < 0) {
+        PrintFormat("  FAIL [getUninitReasonText REASON_REMOVE]: got '%s'",
+                    getUninitReasonText(REASON_REMOVE));
+        return false;
+    }
+    tests_passed++;
+
+    tests_performed++;
+    if(StringFind(getUninitReasonText(REASON_TEMPLATE),    "template") < 0) {
+        PrintFormat("  FAIL [getUninitReasonText REASON_TEMPLATE]: got '%s'",
+                    getUninitReasonText(REASON_TEMPLATE));
+        return false;
+    }
+    tests_passed++;
+
+    // Default/unknown: any integer not matching a case must give "Another reason"
+    tests_performed++;
+    if(StringFind(getUninitReasonText(9999), "Another reason") < 0) {
+        PrintFormat("  FAIL [getUninitReasonText default]: got '%s'",
+                    getUninitReasonText(9999));
+        return false;
+    }
+    tests_passed++;
+
+    return true;
+}
+
+
+//+------------------------------------------------------------------+
+//| MaxTheoreticalBars — ratio of PeriodSeconds() values            |
+//|                                                                  |
+//| Uses PeriodSeconds() which is a pure MQL5 converter (no market  |
+//| data). Inverted pair (tfBig < tfSmall) must return 0.           |
+//+------------------------------------------------------------------+
+bool testMaxTheoreticalBars() {
+    // H4 / H1 = 14400 / 3600 = 4
+    ASSERT_INT(MaxTheoreticalBars(PERIOD_H4, PERIOD_H1),  4,  "MaxTheoreticalBars: H4/H1==4");
+
+    // D1 / H1 = 86400 / 3600 = 24
+    ASSERT_INT(MaxTheoreticalBars(PERIOD_D1, PERIOD_H1),  24, "MaxTheoreticalBars: D1/H1==24");
+
+    // H1 / M15 = 3600 / 900 = 4
+    ASSERT_INT(MaxTheoreticalBars(PERIOD_H1, PERIOD_M15), 4,  "MaxTheoreticalBars: H1/M15==4");
+
+    // M15 / M1 = 900 / 60 = 15
+    ASSERT_INT(MaxTheoreticalBars(PERIOD_M15, PERIOD_M1), 15, "MaxTheoreticalBars: M15/M1==15");
+
+    // Inverted pair: H1 > D1 is false -> secBig < secSmall -> return 0
+    ASSERT_INT(MaxTheoreticalBars(PERIOD_H1, PERIOD_D1),  0,  "MaxTheoreticalBars: H1/D1 inverted==0");
+
+    return true;
+}
+
+
+//+------------------------------------------------------------------+
 //| RunHelpersTests                                                  |
 //|                                                                  |
 //| Entry point called by TestOrderBlock. Runs every test group and |
@@ -414,6 +626,36 @@ bool RunHelpersTests(const string suite) {
     PrintFormat("  [%s] getTPByRRR edge cases", suite);
     if(!testGetTPByRRREdgeCases()) {
         PrintFormat("  FAILED: getTPByRRR edge cases");
+        all_ok = false;
+    }
+
+    PrintFormat("  [%s] GetTrendAngle", suite);
+    if(!testGetTrendAngle()) {
+        PrintFormat("  FAILED: GetTrendAngle");
+        all_ok = false;
+    }
+
+    PrintFormat("  [%s] ArrayPopFront", suite);
+    if(!testArrayPopFront()) {
+        PrintFormat("  FAILED: ArrayPopFront");
+        all_ok = false;
+    }
+
+    PrintFormat("  [%s] FormatTextWithLineBreaks", suite);
+    if(!testFormatTextWithLineBreaks()) {
+        PrintFormat("  FAILED: FormatTextWithLineBreaks");
+        all_ok = false;
+    }
+
+    PrintFormat("  [%s] getUninitReasonText", suite);
+    if(!testGetUninitReasonText()) {
+        PrintFormat("  FAILED: getUninitReasonText");
+        all_ok = false;
+    }
+
+    PrintFormat("  [%s] MaxTheoreticalBars", suite);
+    if(!testMaxTheoreticalBars()) {
+        PrintFormat("  FAILED: MaxTheoreticalBars");
         all_ok = false;
     }
 

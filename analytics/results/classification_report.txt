@@ -1,0 +1,24 @@
+              precision    recall  f1-score   support
+
+LOSS/EXPIRED       0.80      0.57      0.67        14
+         WIN       0.75      0.90      0.82        20
+
+    accuracy                           0.76        34
+   macro avg       0.78      0.74      0.74        34
+weighted avg       0.77      0.76      0.76        34
+
+ROC-AUC (cross-val): 0.8357
+
+Samples: 34 | Folds: 5
+
+Top features by SHAP importance:
+   1. top_imp_valid                   0.0912
+   2. c2_close_pos                    0.0402
+   3. ob_wick_ratio                   0.0344
+   4. atr_ratio                       0.0302
+   5. rr_setup                        0.0257
+   6. htf_aligned                     0.0219
+   7. hour_of_day                     0.0213
+   8. has_choch                       0.0199
+   9. ob_body_pct                     0.0170
+  10. ob_size_pips                    0.0169

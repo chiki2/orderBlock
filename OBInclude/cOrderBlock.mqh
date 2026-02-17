@@ -16,7 +16,7 @@
 class cOrderBlock : public orderBlock
   {
 private:
-;
+   ;
 public:
    void              cOrderBlock();
    void             ~cOrderBlock();
@@ -165,7 +165,9 @@ bool cOrderBlock::checkForMSSEntry(bool BearishMss = false, datetime start = 0, 
    double firstHighLevel = -1.0;
 
    int distance = -1;
-   ChartSetSymbolPeriod(0, _Symbol, tf);
+   // OPTI: ChartSetSymbolPeriod triggers a chart redraw — skip in backtests
+   if(!MQL_TESTER)
+      ChartSetSymbolPeriod(0, _Symbol, tf);
 
 // step 1 on cherche un mss dans le sens de l ob : ob bearish on cherche un mss bearish
 // step 2 on cherche un mss bullish apres le reversal. donc ob bearish => on cherche un mss bullish
@@ -462,10 +464,6 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
 
       if(checkLiquiditySweepBeforeOB(lastHighTime) == false)
         {
-         // si pas de SSL on valide quand meme
-         if(SSL.price > 0)
-           {
-           }
          trashme(ENUM_REASON_NO_MSS);
          return false;
         }
@@ -925,6 +923,7 @@ bool cOrderBlock::checkValidLssc()
         {
          addStars();
          lsscValid  = true;
+         lsscValidated = time(1,CTOB);
          finalCheck = 3;
         }
       else
@@ -933,6 +932,7 @@ bool cOrderBlock::checkValidLssc()
            {
             addStars();
             lsscValid  = true;
+            lsscValidated = time(1,CTOB);
             finalCheck = 3;
            }
          else
@@ -945,43 +945,35 @@ bool cOrderBlock::checkValidLssc()
   }
 
 //+------------------------------------------------------------------+
-//|                                                                  |
+//|                    FVG present sur bougie close qui valide ob    |
 //+------------------------------------------------------------------+
 bool cOrderBlock::checkValidImbalance()
   {
+   if(isImbalanced == true)
+      return true;
+
    int startIndex = bar(startTime);
+   int MSSIdx     = bar(MSSEnd);
    imbalancePrice = (isBear == false) ? DBL_MAX : -DBL_MAX;
 
-// single ob
-   if(lssc == startTime)
+   if(isBear == false)
      {
-      imbalancedDist = (OBBody - OBWick) / SymbolInfoDouble(_Symbol, SYMBOL_POINT);
-      imbalancePrice = OBBody;
+      imbalancedDist = MathAbs(low(MSSIdx -1, CTOB) - high(MSSIdx + 1, CTOB)) / SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+      imbalancePrice = low(MSSIdx - 1, CTOB);
+      FVGStart = time(MSSIdx - 1, CTOB);
+      FVGStartLevel = low(MSSIdx - 1, CTOB);
+      FVGEnd = time(MSSIdx + 1, CTOB);
+      FVGEndLevel = high(MSSIdx+1, CTOB);
      }
 
-// multi
-   if(isMulti == true)
+   if(isBear == true)
      {
-      for(int a = 0; a < startIndex; a++)
-        {
-         if(isBear == false &&
-            low(a, CTOB) > high(a + 2, CTOB) &&
-            lsscPrice < low(a, CTOB) &&
-            imbalancePrice > low(a, CTOB))
-           {
-            imbalancedDist = MathAbs(low(a, CTOB) - high(a + 2, CTOB)) / SymbolInfoDouble(_Symbol, SYMBOL_POINT);
-            imbalancePrice = low(a, CTOB);
-           }
-
-         if(isBear == true &&
-            high(a, CTOB) < low(a + 2, CTOB) &&
-            lsscPrice > high(a, CTOB) &&
-            imbalancePrice < high(a, CTOB))
-           {
-            imbalancedDist = MathAbs(high(a, CTOB) - low(a + 2, CTOB)) / SymbolInfoDouble(_Symbol, SYMBOL_POINT);
-            imbalancePrice = high(a, CTOB);
-           }
-        }
+      imbalancedDist = MathAbs(high(MSSIdx - 1, CTOB) - low(MSSIdx + 1, CTOB)) / SymbolInfoDouble(_Symbol, SYMBOL_POINT);
+      imbalancePrice = high(MSSIdx -1, CTOB);
+      FVGStart = time(MSSIdx -1, CTOB);
+      FVGStartLevel = high(MSSIdx -1, CTOB);
+      FVGEnd = time(MSSIdx +1, CTOB);
+      FVGEndLevel = low(MSSIdx+1, CTOB);
      }
 
    if(imbalancedDist > 100000000000)
