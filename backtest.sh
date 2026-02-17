@@ -21,7 +21,8 @@ EDITOR_EXE="$MT5_DIR/MetaEditor64.exe"
 WINEPREFIX="$MT5_ROOT"
 WINE="$(which wine)"
 
-EA_SRC_WIN='C:\Program Files\MetaTrader 5\MQL5\Experts\orderBlock\OrderBlock.mq5'
+EA_SRC_WIN='C:\Program Files\MetaTrader 5\MQL5\Experts\orderBlock\OrderBlock.mqproj'
+EA_EX5="$MT5_DIR/MQL5/Experts/orderBlock/OrderBlock.ex5"
 CONFIG_PATH="$MT5_DIR/Config/backtest.ini"
 CONFIG_WIN='C:\Program Files\MetaTrader 5\Config\backtest.ini'
 METAEDITOR_LOG="$MT5_DIR/logs/metaeditor.log"
@@ -68,6 +69,9 @@ PYEOF
 bold "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 bold " Step 1/3: Compiling EA with MetaEditor"
 bold "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Delete the .ex5 so MetaEditor is forced to recompile (it skips if ex5 is newer)
+rm -f "$EA_EX5"
 
 # MetaEditor always appends to logs/metaeditor.log — record size before compile
 PRE_LOG_SIZE=$(stat -c %s "$METAEDITOR_LOG" 2>/dev/null || echo 0)
