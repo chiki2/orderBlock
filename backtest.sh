@@ -34,8 +34,9 @@ PERIOD="${PERIOD:-M15}"
 FROM_DATE="${FROM_DATE:-2025.01.01}"
 TO_DATE="${TO_DATE:-2026.01.01}"
 DEPOSIT="${DEPOSIT:-10000}"
-LEVERAGE="${LEVERAGE:-100}"
-MODEL="${MODEL:-1}"   # 0=Every tick  1=1-min OHLC (fast)  4=Real ticks
+LEVERAGE="${LEVERAGE:-500}"
+MODEL="${MODEL:-4}"   # 0=Every tick  1=1-min OHLC (fast)  4=Real ticks
+REPORT="${REPORT:-claudeReport}"
 SAVE_BASELINE=false
 
 for arg in "$@"; do
@@ -71,7 +72,7 @@ COMPILE_LOG="$MT5_DIR/MQL5/Experts/orderBlock/compile.log"
 
 WINEPREFIX="$WINEPREFIX" "$WINE" "$EDITOR_EXE" \
   "/compile:$EA_SRC_WIN" \
-  "/log:C:\\Program Files\\MetaTrader 5\\MQL5\\Experts\\orderBlock\\compile.log" \
+  '/log:C:\Program Files\MetaTrader 5\MQL5\Experts\orderBlock\compile.log' \
   2>/dev/null
 EDITOR_EXIT=$?
 
@@ -130,7 +131,7 @@ fi
 START_TIME=$(date +%s)
 
 # Launch MT5 detached — polling for completion is more reliable than blocking
-WINEPREFIX="$WINEPREFIX" "$WINE" "$MT5_EXE" /portable "/config:$CONFIG_WIN" \
+WINEPREFIX="$WINEPREFIX" "$WINE" "$MT5_EXE" /portable '/config:C:\Program Files\MetaTrader 5\Config\backtest.ini' \
   > /tmp/mt5_wine.log 2>&1 &
 WINE_PID=$!
 echo "  MT5 launched (wine pid $WINE_PID) — polling for completion..."
