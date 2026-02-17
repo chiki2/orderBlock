@@ -128,18 +128,62 @@ if pgrep -f "terminal64" > /dev/null 2>&1; then
 fi
 
 START_TIME=$(date +%s)
-WINEPREFIX="$WINEPREFIX" "$WINE" "$MT5_EXE" /portable "/config:$CONFIG_WIN" 2>/dev/null
-MT5_EXIT=$?
+
+# Launch MT5 detached — polling for completion is more reliable than blocking
+WINEPREFIX="$WINEPREFIX" "$WINE" "$MT5_EXE" /portable "/config:$CONFIG_WIN" \
+  > /tmp/mt5_wine.log 2>&1 &
+WINE_PID=$!
+echo "  MT5 launched (wine pid $WINE_PID) — polling for completion..."
+
+# Poll until log shows "thread finished" or wine process dies, max 10 minutes
+TIMEOUT=600
+ELAPSED=0
+DONE=false
+TODAY_LOG_DIR="$MT5_DIR/Tester"
+while [[ $ELAPSED -lt $TIMEOUT ]]; do
+  sleep 5
+  ELAPSED=$(( $(date +%s) - START_TIME ))
+
+  # Check for completion marker in any agent log written after our start
+  # Check all agent logs modified after our start
+  while IFS= read -r candidate; do
+    MTIME=$(stat -c %Y "$candidate" 2>/dev/null || echo 0)
+    if [[ $MTIME -le $START_TIME ]]; then continue; fi
+    CONTENT=$(python3 -c "
+import codecs, sys
+try:
+    with codecs.open(sys.argv[1], 'r', 'utf-16') as f: print(f.read())
+except:
+    with open(sys.argv[1], errors='replace') as f: print(f.read().replace('\x00',''))
+" "$candidate" 2>/dev/null)
+    if echo "$CONTENT" | grep -q "thread finished"; then
+      FRESH_LOG="$candidate"
+      DONE=true
+      break 2
+    fi
+  done < <(find "$TODAY_LOG_DIR" -name "$(date +%Y%m%d).log" -path "*/Agent-127*" 2>/dev/null)
+
+  # Also stop if wine process has exited (MT5 closed itself)
+  if ! kill -0 "$WINE_PID" 2>/dev/null; then
+    sleep 3  # give log a moment to flush
+    DONE=true
+    break
+  fi
+
+  printf "  ... %ds elapsed\r" "$ELAPSED"
+done
+
 END_TIME=$(date +%s)
 WALL_TIME=$(( END_TIME - START_TIME ))
+echo ""
 
-echo "  MT5 exited after ${WALL_TIME}s (exit code: $MT5_EXIT)"
-
-# If wine exited suspiciously fast (<10s) the test likely didn't run
-if [[ $WALL_TIME -lt 10 ]]; then
-  red "  WARNING: MT5 exited in ${WALL_TIME}s — backtest probably didn't run."
-  red "  Check that no other MT5 instance is running and retry."
+if ! $DONE; then
+  red "  Timeout after ${WALL_TIME}s — killing MT5."
+  kill "$WINE_PID" 2>/dev/null || true
+  pkill -f "terminal64" 2>/dev/null || true
 fi
+
+echo "  Finished after ${WALL_TIME}s"
 
 # ── Step 3: Parse results ───────────────────────────────────────────────────
 bold ""
