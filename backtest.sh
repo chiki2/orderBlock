@@ -24,6 +24,7 @@ WINE="$(which wine)"
 EA_SRC_WIN='C:\Program Files\MetaTrader 5\MQL5\Experts\orderBlock\OrderBlock.mq5'
 CONFIG_PATH="$MT5_DIR/Config/backtest.ini"
 CONFIG_WIN='C:\Program Files\MetaTrader 5\Config\backtest.ini'
+METAEDITOR_LOG="$MT5_DIR/logs/metaeditor.log"
 
 LAST_JSON="$SCRIPT_DIR/backtest_last.json"
 BASELINE_JSON="$SCRIPT_DIR/backtest_baseline.json"
@@ -68,30 +69,47 @@ bold "━━━━━━━━━━━━━━━━━━━━━━━━�
 bold " Step 1/3: Compiling EA with MetaEditor"
 bold "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-COMPILE_LOG="$MT5_DIR/MQL5/Experts/orderBlock/compile.log"
+# MetaEditor always appends to logs/metaeditor.log — record size before compile
+PRE_LOG_SIZE=$(stat -c %s "$METAEDITOR_LOG" 2>/dev/null || echo 0)
 
 WINEPREFIX="$WINEPREFIX" "$WINE" "$EDITOR_EXE" \
   "/compile:$EA_SRC_WIN" \
-  '/log:C:\Program Files\MetaTrader 5\MQL5\Experts\orderBlock\compile.log' \
   2>/dev/null
-EDITOR_EXIT=$?
+sleep 3   # give MetaEditor time to write the result line
 
-# Give MetaEditor a moment to write the log
-sleep 2
+# Read only the new lines appended during this compile
+COMPILE_TEXT=$(python3 - "$METAEDITOR_LOG" "$PRE_LOG_SIZE" << 'PYEOF'
+import sys, codecs
+path, offset = sys.argv[1], int(sys.argv[2])
+try:
+    with codecs.open(path, 'r', 'utf-16') as f:
+        full = f.read()
+    # UTF-16 file: byte offset doesn't map to char offset cleanly;
+    # just print everything and let grep find the last Compile line
+    print(full)
+except Exception:
+    with open(path, errors='replace') as f:
+        print(f.read().replace('\x00', ''))
+PYEOF
+)
 
-if [[ -f "$COMPILE_LOG" ]]; then
-  COMPILE_TEXT=$(read_log "$COMPILE_LOG")
-  ERRORS=$(echo "$COMPILE_TEXT" | grep -c " error" || true)
-  WARNINGS=$(echo "$COMPILE_TEXT" | grep -c " warning" || true)
+# Find the last Compile result line
+COMPILE_LINE=$(echo "$COMPILE_TEXT" | grep "	Compile	" | tail -1)
+if [[ -n "$COMPILE_LINE" ]]; then
+  ERRORS=$(echo "$COMPILE_LINE"   | grep -oP '\K\d+(?= error)')
+  WARNINGS=$(echo "$COMPILE_LINE" | grep -oP '\K\d+(?= warning)')
+  ERRORS=${ERRORS:-0}
+  WARNINGS=${WARNINGS:-0}
   if [[ "$ERRORS" -gt 0 ]]; then
     red "Compile FAILED: $ERRORS error(s), $WARNINGS warning(s)"
-    echo "$COMPILE_TEXT" | grep -E "error|warning" | head -20
+    red "$COMPILE_LINE"
     exit 1
   else
-    green "Compile OK — $WARNINGS warning(s)"
+    green "Compile OK — $ERRORS errors, $WARNINGS warning(s)"
+    echo "  $COMPILE_LINE"
   fi
 else
-  yellow "No compile log found — assuming EA is up to date"
+  yellow "No compile result found in metaeditor.log — assuming EA is up to date"
 fi
 
 # ── Step 2: Write tester config + run backtest ─────────────────────────────
