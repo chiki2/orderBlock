@@ -18,7 +18,17 @@
   "mitigated": 2225,
   "no_mss": 3215,
   "ongoing": 23,
-  "test_duration": "0:01:11.257",
-  "wall_time_s": 11,
-  "ticks": 52288746
+  "test_duration": "0:01:11.640",
+  "wall_time_s": 10,
+  "ticks": 52288746,
+  "profit_factor": "2.55",
+  "expected_payoff": "50.42",
+  "sharpe": "19.88",
+  "max_dd": "253.33 2.51%",
+  "max_dd_pct": "2.51% 253.33",
+  "recovery_factor": "2.96",
+  "total_trades": "24",
+  "profit_trades": "18 75.00%",
+  "loss_trades": "6 25.00%",
+  "report": "/home/charles/.mt5/drive_c/Program Files/MetaTrader 5/claudeReport.htm"
 }

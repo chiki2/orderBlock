@@ -151,6 +151,8 @@ echo "  Range:   $FROM_DATE → $TO_DATE"
 echo "  Model:   $MODEL  (0=tick 1=1min-OHLC 4=real-ticks)"
 echo "  Deposit: $DEPOSIT USD  Leverage: 1:$LEVERAGE"
 
+REPORT_FILE="$MT5_DIR/${REPORT}.htm"
+
 cat > "$CONFIG_PATH" << EOF
 [Tester]
 Expert=orderBlock\OrderBlock
@@ -163,6 +165,8 @@ ToDate=$TO_DATE
 Deposit=$DEPOSIT
 Leverage=1:$LEVERAGE
 Currency=USD
+Report=$REPORT
+ReplaceReport=1
 ShutdownTerminal=1
 EOF
 
@@ -284,6 +288,48 @@ ONGOING=$(echo "$LOG_TEXT"    | grep -oP 'A trade is ongoing : \K\d+' | tail -1 
 TEST_DUR=$(echo "$LOG_TEXT"   | grep -oP 'Test passed in \K[0-9:\.]+' | tail -1 || echo "?")
 TICKS=$(echo "$LOG_TEXT"      | grep -oP '(\d+) ticks,' | grep -oP '\d+' | tail -1 || echo "0")
 
+# ── Parse HTML report for financial metrics ─────────────────────────────────
+PROFIT_FACTOR="n/a"; EXPECTED_PAYOFF="n/a"; SHARPE="n/a"
+MAX_DD="n/a"; MAX_DD_PCT="n/a"; RECOVERY="n/a"
+TOTAL_TRADES="n/a"; PROFIT_TRADES="n/a"; LOSS_TRADES="n/a"
+
+if [[ -f "$REPORT_FILE" ]]; then
+  eval "$(python3 - "$REPORT_FILE" << 'PYEOF'
+import re, sys, html, codecs
+
+def extract(text, label):
+    # MT5 report structure: label ends with ':' inside <td>, value in <b> in next <td>
+    pattern = re.escape(label) + r'[^<]*</td>\s*<td[^>]*>\s*(?:<[^>]+>)*([^<]+)'
+    m = re.search(pattern, text, re.IGNORECASE)
+    return html.unescape(m.group(1).strip()) if m else "n/a"
+
+# MT5 reports are UTF-16 encoded
+try:
+    with codecs.open(sys.argv[1], 'r', 'utf-16') as f:
+        txt = f.read()
+except Exception:
+    with open(sys.argv[1], encoding='utf-8', errors='replace') as f:
+        txt = f.read()
+
+fields = {
+    "PROFIT_FACTOR":   extract(txt, "Profit Factor:"),
+    "EXPECTED_PAYOFF": extract(txt, "Expected Payoff:"),
+    "SHARPE":          extract(txt, "Sharpe Ratio:"),
+    "MAX_DD":          extract(txt, "Balance Drawdown Maximal:"),
+    "MAX_DD_PCT":      extract(txt, "Balance Drawdown Relative:"),
+    "RECOVERY":        extract(txt, "Recovery Factor:"),
+    "TOTAL_TRADES":    extract(txt, "Total Trades:"),
+    "PROFIT_TRADES":   extract(txt, "Profit Trades"),
+    "LOSS_TRADES":     extract(txt, "Loss Trades"),
+}
+for k, v in fields.items():
+    # Shell-safe: strip everything except digits, dot, percent, space, slash, minus
+    safe = re.sub(r"[^0-9a-zA-Z%. /\-]", "", v)
+    print(f'{k}="{safe}"')
+PYEOF
+  )"
+fi
+
 # Win rate from ob_data CSV if available
 WIN_RATE="n/a"
 OB_CSV=$(find "$MT5_DIR/Tester" -name "ob_data_${SYMBOL}*.csv" \
@@ -337,10 +383,23 @@ printf "  │  %-20s  %16s │\n" "Mitigated"        "$MITIGATED"
 printf "  │  %-20s  %16s │\n" "No MSS"           "$NO_MSS"
 printf "  │  %-20s  %16s │\n" "Skipped (ongoing)" "$ONGOING"
 bold "  ├─────────────────────────────────────────┤"
+printf "  │  %-20s  %16s │\n" "Profit factor"    "$PROFIT_FACTOR"
+printf "  │  %-20s  %16s │\n" "Expected payoff"  "$EXPECTED_PAYOFF"
+printf "  │  %-20s  %16s │\n" "Sharpe ratio"     "$SHARPE"
+printf "  │  %-20s  %16s │\n" "Max drawdown"     "$MAX_DD"
+printf "  │  %-20s  %16s │\n" "Max DD %"         "$MAX_DD_PCT"
+printf "  │  %-20s  %16s │\n" "Recovery factor"  "$RECOVERY"
+printf "  │  %-20s  %16s │\n" "Total trades"     "$TOTAL_TRADES"
+printf "  │  %-20s  %16s │\n" "Profit trades"    "$PROFIT_TRADES"
+printf "  │  %-20s  %16s │\n" "Loss trades"      "$LOSS_TRADES"
+bold "  ├─────────────────────────────────────────┤"
 printf "  │  %-20s  %16s │\n" "Test duration"    "$TEST_DUR"
 printf "  │  %-20s  %16s │\n" "Wall time"        "${WALL_TIME}s"
 printf "  │  %-20s  %16s │\n" "Ticks"            "$TICKS"
 bold "  └─────────────────────────────────────────┘"
+if [[ -f "$REPORT_FILE" ]]; then
+  echo "  Report: $REPORT_FILE"
+fi
 
 # ── Save current results as JSON ────────────────────────────────────────────
 python3 << PYEOF > "$LAST_JSON"
@@ -365,6 +424,16 @@ data = {
     "test_duration": "$TEST_DUR",
     "wall_time_s": $WALL_TIME,
     "ticks": int("$TICKS"),
+    "profit_factor": "$PROFIT_FACTOR",
+    "expected_payoff": "$EXPECTED_PAYOFF",
+    "sharpe": "$SHARPE",
+    "max_dd": "$MAX_DD",
+    "max_dd_pct": "$MAX_DD_PCT",
+    "recovery_factor": "$RECOVERY",
+    "total_trades": "$TOTAL_TRADES",
+    "profit_trades": "$PROFIT_TRADES",
+    "loss_trades": "$LOSS_TRADES",
+    "report": "$REPORT_FILE",
 }
 print(json.dumps(data, indent=2))
 PYEOF
@@ -380,33 +449,45 @@ elif [[ -f "$BASELINE_JSON" ]]; then
   bold "  │     DELTA vs BASELINE                   │"
   bold "  └─────────────────────────────────────────┘"
   python3 - "$LAST_JSON" "$BASELINE_JSON" << 'PYEOF'
-import json, sys
+import json, sys, re
 
-def delta(new, old, key, fmt=".0f", pct=False):
-    n = new.get(key, 0)
-    o = old.get(key, 0)
-    if isinstance(n, float) or isinstance(o, float):
-        d = float(n) - float(o)
-    else:
-        d = int(n) - int(o)
+def to_num(v):
+    if v in (None, "", "n/a"): return None
+    try: return float(str(v).split()[0].replace(',', '.'))
+    except: return None
+
+def delta(new, old, key, fmt=".2f", pct=False, invert=False):
+    """invert=True means lower is better (e.g. drawdown)"""
+    n = to_num(new.get(key))
+    o = to_num(old.get(key))
+    if n is None or o is None:
+        nv = new.get(key, "n/a"); ov = old.get(key, "n/a")
+        print(f"  \033[33m─\033[0m  {key:<22} {ov} → {nv}")
+        return
+    d = n - o
+    good = (d < 0) if invert else (d > 0)
     arrow = "▲" if d > 0 else ("▼" if d < 0 else "─")
-    color = "\033[32m" if d > 0 else ("\033[31m" if d < 0 else "\033[33m")
+    color = "\033[32m" if good else ("\033[31m" if d != 0 else "\033[33m")
     reset = "\033[0m"
-    pct_str = f"({100*d/float(o):.1f}%)" if pct and o != 0 else ""
-    print(f"  {color}{arrow}{reset}  {key:<22} {format(float(o), fmt)} → {format(float(n), fmt)} {color}{pct_str}{reset}")
+    pct_str = f" ({100*d/o:+.1f}%)" if pct and o != 0 else ""
+    print(f"  {color}{arrow}{reset}  {key:<22} {o:{fmt}} → {n:{fmt}}{color}{pct_str}{reset}")
 
 with open(sys.argv[1]) as f:
     new = json.load(f)
 with open(sys.argv[2]) as f:
     old = json.load(f)
 
-delta(new, old, "balance",     ".2f", pct=True)
-delta(new, old, "ontester",    ".0f", pct=True)
-delta(new, old, "traded",      ".0f", pct=True)
-delta(new, old, "overdue",     ".0f")
-delta(new, old, "mitigated",   ".0f")
-delta(new, old, "no_mss",      ".0f")
-delta(new, old, "wall_time_s", ".0f")
+delta(new, old, "balance",        ".2f", pct=True)
+delta(new, old, "ontester",       ".0f", pct=True)
+delta(new, old, "profit_factor",  ".2f")
+delta(new, old, "sharpe",         ".2f")
+delta(new, old, "max_dd_pct",     ".2f", invert=True)
+delta(new, old, "recovery_factor",".2f")
+delta(new, old, "traded",         ".0f", pct=True)
+delta(new, old, "overdue",        ".0f")
+delta(new, old, "mitigated",      ".0f")
+delta(new, old, "no_mss",         ".0f")
+delta(new, old, "wall_time_s",    ".0f")
 PYEOF
 else
   yellow ""
