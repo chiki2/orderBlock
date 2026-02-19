@@ -100,11 +100,15 @@ compile_ea() {
   xdotool windowraise "$WID" 2>/dev/null || true
   xdotool windowactivate --sync "$WID" 2>/dev/null || true
   sleep 1
+
+  # Delete the old binary so we can detect when a fresh one appears
+  rm -f "$EA_EX5"
+
   xdotool key F7 2>/dev/null || true
 
-  # Wait for .ex5 to appear (up to 30s)
+  # Wait for fresh .ex5 to appear (up to 60s)
   local ok=1
-  for _ in $(seq 1 10); do
+  for _ in $(seq 1 20); do
     sleep 3
     if [[ -f "$EA_EX5" ]]; then ok=0; break; fi
   done
@@ -156,6 +160,7 @@ REPORT_FILE="$MT5_DIR/${REPORT}.htm"
 cat > "$CONFIG_PATH" << EOF
 [Tester]
 Expert=orderBlock\OrderBlock
+ExpertParameters=/home/charles/.mt5/drive_c/Program Files/MetaTrader 5/MQL5/Experts/orderBlock/OBInclude/SetFiles/claude.set
 Symbol=$SYMBOL
 Period=$PERIOD
 Model=$MODEL
