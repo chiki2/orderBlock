@@ -24,6 +24,8 @@ EA_EX5="$MT5_DIR/MQL5/Experts/orderBlock/OrderBlock.ex5"
 # Write config to a space-free path to avoid wine quoting issues with /config: arg
 CONFIG_PATH="$MT5_ROOT/drive_c/MT5_backtest.ini"
 CONFIG_WIN='C:\MT5_backtest.ini'
+# Expert set file — must be a Windows path so MT5 can resolve it under Wine
+SET_FILE_WIN='C:\Program Files\MetaTrader 5\MQL5\Experts\orderBlock\OBInclude\SetFiles\claude.set'
 
 LAST_JSON="$SCRIPT_DIR/backtest_last.json"
 BASELINE_JSON="$SCRIPT_DIR/backtest_baseline.json"
@@ -160,7 +162,7 @@ REPORT_FILE="$MT5_DIR/${REPORT}.htm"
 cat > "$CONFIG_PATH" << EOF
 [Tester]
 Expert=orderBlock\OrderBlock
-ExpertParameters=/home/charles/.mt5/drive_c/Program Files/MetaTrader 5/MQL5/Experts/orderBlock/OBInclude/SetFiles/claude.set
+ExpertParameters=$SET_FILE_WIN
 Symbol=$SYMBOL
 Period=$PERIOD
 Model=$MODEL
@@ -250,9 +252,12 @@ echo ""
 
 if ! $DONE; then
   red "  Timeout after ${WALL_TIME}s — killing MT5."
-  kill "$WINE_PID" 2>/dev/null || true
+else
+  # Backtest finished — kill MT5 so the script can exit cleanly
   pkill -f "terminal64" 2>/dev/null || true
+  pkill -f "metatester64" 2>/dev/null || true
 fi
+kill "$WINE_PID" 2>/dev/null || true
 
 echo "  Finished after ${WALL_TIME}s"
 

@@ -378,7 +378,7 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
         }
 
       int lastCandleCheck = (MSSLastCandleChecked == 0) ? lastLowIndex : bar(MSSLastCandleChecked, CTOB);
-      if(lastCandleCheck > 6)
+      if(lastCandleCheck > 12)
         {
          trashme(ENUM_REASON_NO_MSS);
          return false;
@@ -390,7 +390,7 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
          MSSLastCandleChecked = time(a, CTOB);
 
          if(MSSBreakLevel > MSSLevel &&
-            detectFVG(a, true, MSSLevel, CTOB) == true &&
+            (inpMSSRequireFVG == false || detectFVG(a, true, MSSLevel, CTOB) == true) &&
             lastLowIndex > a)
            {
             if(isMSS == false)
@@ -477,7 +477,7 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
         }
 
       int lastCandleCheck = (MSSLastCandleChecked == 0) ? lastHighIndex : bar(MSSLastCandleChecked, CTOB);
-      if(lastCandleCheck > 6)
+      if(lastCandleCheck > 12)
         {
          trashme(ENUM_REASON_NO_MSS);
          return false;
@@ -488,7 +488,7 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
          MSSBreakLevel        = (isBullishCandle(a) == false) ? close(a, CTOB) : open(a, CTOB);
          MSSLastCandleChecked = time(a, CTOB);
          if(MSSBreakLevel < MSSLevel &&
-            detectFVG(a, true, MSSLevel, CTOB) == true &&
+            (inpMSSRequireFVG == false || detectFVG(a, true, MSSLevel, CTOB) == true) &&
             lastLowIndex > a)
            {
             MSSEnd = time(a, CTOB);
@@ -1223,9 +1223,14 @@ bool cOrderBlock::isAllGood(int i)
 // we cancel the trade
    if(mHTFTrend == TREND_RANGE || mHTFTrend == TREND_UKNOWN)
      {
-      obBuffer[i].reason   = ENUM_REASON_TREND_RANGE_PROTECTION;
-      obBuffer[i].wasRange = true;
-      return false;
+      if(isRangeTradingOK == false)
+        {
+         obBuffer[i].reason   = ENUM_REASON_TREND_RANGE_PROTECTION;
+         obBuffer[i].wasRange = true;
+         return false;
+        }
+      // Range trading allowed: mark as range direction (lot size will be minimal)
+      obBuffer[i].trendDir = TREND_RANGE;
      }
 
    // #21 Spread cap: skip entry if spread is too wide
