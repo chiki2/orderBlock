@@ -1233,6 +1233,17 @@ bool cOrderBlock::isAllGood(int i)
       obBuffer[i].trendDir = TREND_RANGE;
      }
 
+   // Macro trend filter: skip ALL OBs when monthly trend has no clear direction
+   if(inpMacroTrendEnabled)
+     {
+      MarketTrend macroTrend = GetMarketTrend(PERIOD_W1, 24);
+      if(macroTrend == TREND_RANGE || macroTrend == TREND_UKNOWN)
+        {
+         reason = ENUM_REASON_MACRO_RANGE;
+         return false;
+        }
+     }
+
    // H4 trend confluence: reject OB if it trades against the H4 trend
    if(inpRequireH4Trend)
      {
