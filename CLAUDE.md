@@ -24,10 +24,24 @@ bash backtest.sh
 
 ## Architecture Quick Reference
 - `HTOB=16385` = PERIOD_H1 (trend timeframe)
-- `CTOB=15` = PERIOD_M15 (signal timeframe)
+- `CTOB=15` = PERIOD_M15 (signal timeframe) — **confirmed best; M5/M30/H1 tested and inferior**
 - `typeofOrder=1` = LIMIT orders (STOP=2 never triggers in XAUUSD backtest)
 - `g_reasonCounters` array size must equal `ENUM_REASON_last_value + 1` — crashes if wrong
 - Do NOT add `#include "langs.mqh"` to `helpers.mqh` — causes 100+ compile errors
+
+## OB State Machine — Critical Quirks
+- **`setOBOrder()` sets `isDone=true` immediately** after placing a limit order (OrderProcess.mqh ~line 300).
+  Any code gated on `!obBuffer[i].isDone` will be silently skipped for pending orders.
+  To act on pending orders post-placement, check `tradeTicket != INVALID_TICKET && OrderSelect(ticket)` instead.
+- **Resetting `isDone=false` without an `isNewBar` gate causes tick-level oscillation**: cancel → isDone=false →
+  isAllGood passes → re-place → cancel again (sub-second loop). Always gate cancellation/reset on `isNewBar`.
+- **`OrderSelect(ticket)`** returns true for pending (unfilled) limit orders; `PositionSelectByTicket(ticket)`
+  returns true for open positions. Use to distinguish the two states.
+
+## Timeframe Testing
+- To test a different signal timeframe: change `CTOB=N` in `OBInclude/SetFiles/claude.set` AND pass `PERIOD=MX` env var to `backtest.sh`
+- Both must match: `PERIOD=M5` + `CTOB=5`, `PERIOD=M30` + `CTOB=30`, etc.
+- Example: `PERIOD=M30 bash backtest.sh` with `CTOB=30` in claude.set
 
 ## Include Rule
 `langs.mqh` → T() → uses `language` var declared in `OrderBlock.mq5` AFTER all includes.
