@@ -1233,6 +1233,17 @@ bool cOrderBlock::isAllGood(int i)
       obBuffer[i].trendDir = TREND_RANGE;
      }
 
+   // H4 trend confluence: reject OB if it trades against the H4 trend
+   if(inpRequireH4Trend)
+     {
+      MarketTrend h4Trend = GetMarketTrend(PERIOD_H4, 5);
+      if((isBear && h4Trend == TREND_BULLISH) || (!isBear && h4Trend == TREND_BEARISH))
+        {
+         reason = ENUM_REASON_H4_COUNTER_TREND;
+         return false;
+        }
+     }
+
    // #21 Spread cap: skip entry if spread is too wide
    if(inpMaxSpread > 0 && spread > inpMaxSpread)
      {
