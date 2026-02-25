@@ -1171,6 +1171,15 @@ bool cOrderBlock::checkInZone()
 //+------------------------------------------------------------------+
 bool cOrderBlock::isAllGood(int i)
   {
+   // #26 Daily bias: always re-check even if allChecks=true (bias can flip tick-by-tick)
+   if(inpDailyBiasEnabled)
+     {
+      double dailyOpen = iOpen(_Symbol, PERIOD_D1, 0);
+      bool bullishBias = (bidPrice > dailyOpen);
+      if(isBear == false && !bullishBias) { reason = ENUM_REASON_IS_COUNTER_BEARISH;  return false; }
+      if(isBear == true  &&  bullishBias) { reason = ENUM_REASON_IS_COUNTER_BULLISH;  return false; }
+     }
+
    if(allChecks == true)
       return true;
 
@@ -1274,15 +1283,6 @@ bool cOrderBlock::isAllGood(int i)
          reason = ENUM_REASON_TRADE_ONGOING;
          return false;
         }
-     }
-
-   // #24 Daily open bias: only trade in the direction price is vs daily open
-   if(inpDailyBiasEnabled)
-     {
-      double dailyOpen = iOpen(_Symbol, PERIOD_D1, 0);
-      bool bullishBias = (bidPrice > dailyOpen);
-      if(isBear == false && !bullishBias) { reason = ENUM_REASON_IS_COUNTER_BEARISH;  return false; }
-      if(isBear == true  &&  bullishBias) { reason = ENUM_REASON_IS_COUNTER_BULLISH;  return false; }
      }
 
    allChecks  = true;
