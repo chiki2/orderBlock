@@ -24,8 +24,9 @@ EA_EX5="$MT5_DIR/MQL5/Experts/orderBlock/OrderBlock.ex5"
 # Write config to a space-free path to avoid wine quoting issues with /config: arg
 CONFIG_PATH="$MT5_ROOT/drive_c/MT5_backtest.ini"
 CONFIG_WIN='C:\MT5_backtest.ini'
-# Expert set file — must be a Windows path so MT5 can resolve it under Wine
-SET_FILE_WIN='C:\Program Files\MetaTrader 5\MQL5\Experts\orderBlock\OBInclude\SetFiles\claude.set'
+# ExpertParameters must be just the filename — MT5 looks in MQL5\Profiles\Tester\
+SET_FILE_NAME='claude.set'
+SET_FILE_PRESETS="$MT5_DIR/MQL5/Profiles/Tester/$SET_FILE_NAME"
 
 LAST_JSON="$SCRIPT_DIR/backtest_last.json"
 BASELINE_JSON="$SCRIPT_DIR/backtest_baseline.json"
@@ -71,52 +72,42 @@ EDITOR_EXE="$MT5_DIR/MetaEditor64.exe"
 METAEDITOR_LOG="$MT5_DIR/logs/metaeditor.log"
 
 compile_ea() {
-  # Compile the EA via MetaEditor GUI + xdotool F7 keypress:
-  # 1. Kill any existing MetaEditor, launch a fresh GUI instance
-  # 2. Wait for the window to appear (MetaEditor opens the last-used file)
-  # 3. Activate the window and send F7 to trigger compilation
-  # 4. Wait for .ex5 to appear
-  # Returns 0 on success, 1 on failure
+  # Compile the EA via MetaEditor command-line mode:
+  #   MetaEditor64.exe /compile:"C:\MT5\..." /log
+  # Uses C:\MT5 symlink (→ Program Files\MetaTrader 5) to avoid spaces in path.
+  # MetaEditor exits after compilation — no GUI interaction needed.
+  # Returns 0 on success, 1 on failure.
+
+  # Space-free Windows path via C:\MT5 symlink
+  local EA_SRC_WIN='C:\MT5\MQL5\Experts\orderBlock\OrderBlock.mq5'
 
   pkill -f "MetaEditor64" 2>/dev/null || true
   sleep 1
 
-  # Launch MetaEditor GUI — suppress output to avoid pipe breakage
-  # Must use set +e because wine produces a large volume of fixme output
-  (set +e; WINEPREFIX="$WINEPREFIX" "$WINE" "$EDITOR_EXE" > /tmp/me_gui.log 2>&1) &
+  # Touch the source to ensure MetaEditor sees it as modified and recompiles
+  touch "$EA_SRC"
 
-  # Wait for the MetaEditor window to appear (up to 30s)
-  local WID=""
-  for _ in $(seq 1 10); do
-    sleep 3
-    WID=$(xdotool search --name "MetaEditor" 2>/dev/null | head -1)
-    [[ -n "$WID" ]] && break
-  done
+  echo "  Launching MetaEditor (CLI compile)..."
+  (set +e; WINEPREFIX="$WINEPREFIX" "$WINE" "$EDITOR_EXE" \
+    "/compile:$EA_SRC_WIN" /log \
+    > /tmp/me_compile.log 2>&1)
 
-  if [[ -z "$WID" ]]; then
-    pkill -f "MetaEditor64" 2>/dev/null || true
-    return 1
+  # MetaEditor exits after compile — check for .ex5
+  if [[ -f "$EA_EX5" ]]; then
+    return 0
   fi
 
-  # Activate window and send F7 to compile
-  xdotool windowraise "$WID" 2>/dev/null || true
-  xdotool windowactivate --sync "$WID" 2>/dev/null || true
-  sleep 1
+  # Show last lines of compile log to help debug
+  echo "  MetaEditor compile log (last 20 lines):"
+  tail -20 /tmp/me_compile.log 2>/dev/null | sed 's/^/    /' || true
 
-  # Delete the old binary so we can detect when a fresh one appears
-  rm -f "$EA_EX5"
+  # Also check metaeditor.log for errors
+  if [[ -f "$METAEDITOR_LOG" ]]; then
+    echo "  MetaEditor log (last 10 lines):"
+    read_log "$METAEDITOR_LOG" 2>/dev/null | tail -10 | sed 's/^/    /' || true
+  fi
 
-  xdotool key F7 2>/dev/null || true
-
-  # Wait for fresh .ex5 to appear (up to 60s)
-  local ok=1
-  for _ in $(seq 1 20); do
-    sleep 3
-    if [[ -f "$EA_EX5" ]]; then ok=0; break; fi
-  done
-
-  pkill -f "MetaEditor64" 2>/dev/null || true
-  return $ok
+  return 1
 }
 
 # ── Step 1: Ensure EA is compiled ────────────────────────────────────────────
@@ -159,10 +150,15 @@ echo "  Deposit: $DEPOSIT USD  Leverage: 1:$LEVERAGE"
 
 REPORT_FILE="$MT5_DIR/${REPORT}.htm"
 
+# Copy set file to MQL5\presets\ — ExpertParameters must be relative filename in that dir
+SET_FILE_LINUX="$MT5_DIR/MQL5/Experts/orderBlock/OBInclude/SetFiles/claude.set"
+echo "  Copying claude.set → MQL5/presets/$SET_FILE_NAME"
+cp "$SET_FILE_LINUX" "$SET_FILE_PRESETS"
+
 cat > "$CONFIG_PATH" << EOF
 [Tester]
 Expert=orderBlock\OrderBlock
-ExpertParameters=$SET_FILE_WIN
+ExpertParameters=$SET_FILE_NAME
 Symbol=$SYMBOL
 Period=$PERIOD
 Model=$MODEL
@@ -187,77 +183,37 @@ fi
 
 START_TIME=$(date +%s)
 TODAY=$(date +%Y%m%d)
-AGENT_CANDIDATES=$(find "$MT5_DIR/Tester" -name "${TODAY}.log" -path "*/Agent-127*" 2>/dev/null)
 
-# Record pre-run byte size of each agent log to detect new content only
-declare -A LOG_OFFSET
-for f in $AGENT_CANDIDATES; do
-  LOG_OFFSET["$f"]=$(stat -c %s "$f" 2>/dev/null || echo 0)
-done
-
-# Launch MT5 detached — MT5 terminal will hand off to metatester64 and exit
+# Launch MT5 in portable mode — runs the strategy tester in-process,
+# so this single wine process covers the entire backtest lifetime
 WINEPREFIX="$WINEPREFIX" "$WINE" "$MT5_EXE" /portable "/config:$CONFIG_WIN" \
   > /tmp/mt5_wine.log 2>&1 &
-WINE_PID=$!
-echo "  MT5 launched (wine pid $WINE_PID) — polling for completion..."
+MT5_PID=$!
+echo "  MT5 launched (pid $MT5_PID) — running test..."
 
-# Poll until agent log shows "thread finished" in NEW content, max 10 minutes
-# Note: MT5 terminal may exit early (hands off to metatester64); don't break on its exit
-TIMEOUT=600
-ELAPSED=0
-DONE=false
-FRESH_LOG=""
-while [[ $ELAPSED -lt $TIMEOUT ]]; do
-  sleep 5
+# Show progress while waiting for MT5 to finish
+while kill -0 "$MT5_PID" 2>/dev/null; do
   ELAPSED=$(( $(date +%s) - START_TIME ))
-
-  # Look for agent logs (may include new ones created this run)
-  while IFS= read -r candidate; do
-    MTIME=$(stat -c %Y "$candidate" 2>/dev/null || echo 0)
-    # Only consider logs modified AFTER our test started
-    if [[ $MTIME -le $START_TIME ]]; then continue; fi
-    OFFSET=${LOG_OFFSET["$candidate"]:-0}
-    # Read only new content (bytes after the pre-run file size)
-    NEW_CONTENT=$(python3 -c "
-import codecs, sys
-path, offset = sys.argv[1], int(sys.argv[2])
-try:
-    with open(path, 'rb') as raw:
-        raw.read(offset)  # skip already-seen bytes
-        rest = raw.read()
-    print(rest.decode('utf-16-le', errors='replace'))
-except Exception:
-    try:
-        with codecs.open(path, 'r', 'utf-16') as f:
-            f.read(offset // 2)
-            print(f.read())
-    except Exception:
-        with open(path, 'rb') as f:
-            f.seek(offset)
-            print(f.read().decode('latin-1', errors='replace'))
-" "$candidate" "$OFFSET" 2>/dev/null)
-    if echo "$NEW_CONTENT" | grep -q "thread finished"; then
-      FRESH_LOG="$candidate"
-      DONE=true
-      break 2
-    fi
-  done < <(find "$MT5_DIR/Tester" -name "${TODAY}.log" -path "*/Agent-127*" 2>/dev/null)
-
   printf "  ... %ds elapsed\r" "$ELAPSED"
+  sleep 2
 done
+wait "$MT5_PID" 2>/dev/null || true
+sleep 1  # allow final log flush
 
 END_TIME=$(date +%s)
 WALL_TIME=$(( END_TIME - START_TIME ))
 echo ""
 
-if ! $DONE; then
-  red "  Timeout after ${WALL_TIME}s — killing MT5."
-else
-  # Backtest finished — kill MT5 so the script can exit cleanly
-  pkill -f "terminal64" 2>/dev/null || true
-  pkill -f "metatester64" 2>/dev/null || true
-fi
-kill "$WINE_PID" 2>/dev/null || true
+# Find the agent log written during this run (most recently modified, after start)
+FRESH_LOG=""
+while IFS= read -r candidate; do
+  MTIME=$(stat -c %Y "$candidate" 2>/dev/null || echo 0)
+  if [[ $MTIME -gt $START_TIME ]]; then
+    FRESH_LOG="$candidate"
+    break
+  fi
+done < <(find "$MT5_DIR/Tester" -name "${TODAY}.log" -path "*/Agent-127*" \
+  -printf '%T@ %p\n' 2>/dev/null | sort -rn | cut -d' ' -f2-)
 
 echo "  Finished after ${WALL_TIME}s"
 
@@ -284,7 +240,7 @@ LOG_TEXT=$(read_log "$AGENT_LOG")
 
 # Extract metrics
 BALANCE=$(echo "$LOG_TEXT"    | grep -oP 'final balance \K[\d.]+' | tail -1 || echo "0")
-ONTESTER=$(echo "$LOG_TEXT"   | grep -oP 'OnTester result \K[\d]+' | tail -1 || echo "0")
+ONTESTER=$(echo "$LOG_TEXT"   | grep -oP 'OnTester result \K[\d.]+' | tail -1 || echo "0")
 TOTAL_OB=$(echo "$LOG_TEXT"   | grep -oP 'Total OB : \K\d+' | tail -1 || echo "0")
 TRADED=$(echo "$LOG_TEXT"     | grep -oP 'Step ENUM_FC_All_CHECK : \K\d+' | tail -1 || echo "0")
 FC_OB=$(echo "$LOG_TEXT"      | grep -oP 'Step ENUM_FC_VALID_OB : \K\d+' | tail -1 || echo "0")
