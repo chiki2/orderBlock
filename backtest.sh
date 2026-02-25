@@ -375,7 +375,7 @@ data = {
     "from": "$FROM_DATE", "to": "$TO_DATE",
     "model": $MODEL, "deposit": $DEPOSIT,
     "balance": float("$BALANCE") if "$BALANCE" else 0,
-    "ontester": int("$ONTESTER") if "$ONTESTER" else 0,
+    "ontester": float("$ONTESTER") if "$ONTESTER" else 0,
     "win_rate_str": "$WIN_RATE",
     "total_ob": int("$TOTAL_OB"),
     "fc_ob": int("$FC_OB"),
