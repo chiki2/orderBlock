@@ -1253,7 +1253,18 @@ bool cOrderBlock::isAllGood(int i)
         }
      }
 
-   // H4 trend confluence: reject OB if it trades against the H4 trend
+   // D1 trend confluence: reject OB if it trades against the daily trend (W1->D1 cascade)
+   if(inpRequireD1Trend)
+     {
+      MarketTrend d1Trend = GetMarketTrend(PERIOD_D1, 5);
+      if((isBear && d1Trend == TREND_BULLISH) || (!isBear && d1Trend == TREND_BEARISH))
+        {
+         reason = ENUM_REASON_D1_COUNTER_TREND;
+         return false;
+        }
+     }
+
+  // H4 trend confluence: reject OB if it trades against the H4 trend
    if(inpRequireH4Trend)
      {
       MarketTrend h4Trend = GetMarketTrend(PERIOD_H4, 5);
