@@ -1264,6 +1264,36 @@ bool cOrderBlock::isAllGood(int i)
         }
      }
 
+  // Swing structure: SELL OB must be near H1 swing high; BUY OB near H1 swing low
+   // Uses iHighest/iLowest directly (GetLastSwingHigh breaks on first bar when strictMode=false)
+   if(inpRequireSwingStructure)
+     {
+      double atr14 = getAtr(14, PERIOD_H4);
+      double tol   = inpSwingToleranceAtr * atr14;
+      if(isBear)
+        {
+         // Highest H1 high in last 50 bars — OB must be within tolerance of that level
+         int    hwIdx  = iHighest(_Symbol, PERIOD_H4, MODE_HIGH, 20, 1);
+         double swHigh = (hwIdx >= 0) ? iHigh(_Symbol, PERIOD_H4, hwIdx) : 0;
+         if(swHigh > 0 && highPrice < swHigh - tol)
+           {
+            reason = ENUM_REASON_NO_SWING_STRUCTURE;
+            return false;
+           }
+        }
+      else
+        {
+         // Lowest H1 low in last 50 bars — OB must be within tolerance of that level
+         int    lwIdx = iLowest(_Symbol, PERIOD_H4, MODE_LOW, 20, 1);
+         double swLow = (lwIdx >= 0) ? iLow(_Symbol, PERIOD_H4, lwIdx) : 0;
+         if(swLow > 0 && lowPrice > swLow + tol)
+           {
+            reason = ENUM_REASON_NO_SWING_STRUCTURE;
+            return false;
+           }
+        }
+     }
+
   // H4 trend confluence: reject OB if it trades against the H4 trend
    if(inpRequireH4Trend)
      {
