@@ -1172,7 +1172,7 @@ bool cOrderBlock::checkInZone()
 bool cOrderBlock::isAllGood(int i)
   {
    // #26 Daily bias: always re-check even if allChecks=true (bias can flip tick-by-tick)
-   if(inpDailyBiasEnabled)
+   if(g_dailyBiasEnabled)
      {
       double dailyOpen = iOpen(_Symbol, PERIOD_D1, 0);
       bool bullishBias = (bidPrice > dailyOpen);
@@ -1243,7 +1243,7 @@ bool cOrderBlock::isAllGood(int i)
      }
 
    // Macro trend filter: skip ALL OBs when monthly trend has no clear direction
-   if(inpMacroTrendEnabled)
+   if(g_macroTrendEnabled)
      {
       MarketTrend macroTrend = GetMarketTrend(PERIOD_W1, 24);
       if(macroTrend == TREND_RANGE || macroTrend == TREND_UKNOWN)
@@ -1254,7 +1254,7 @@ bool cOrderBlock::isAllGood(int i)
      }
 
    // D1 trend confluence: reject OB if it trades against the daily trend (W1->D1 cascade)
-   if(inpRequireD1Trend)
+   if(g_d1TrendEnabled)
      {
       MarketTrend d1Trend = GetMarketTrend(PERIOD_D1, 5);
       if((isBear && d1Trend == TREND_BULLISH) || (!isBear && d1Trend == TREND_BEARISH))
@@ -1295,7 +1295,7 @@ bool cOrderBlock::isAllGood(int i)
      }
 
   // H4 trend confluence: reject OB if it trades against the H4 trend
-   if(inpRequireH4Trend)
+   if(g_h4TrendEnabled)
      {
       MarketTrend h4Trend = GetMarketTrend(PERIOD_H4, 5);
       if((isBear && h4Trend == TREND_BULLISH) || (!isBear && h4Trend == TREND_BEARISH))
