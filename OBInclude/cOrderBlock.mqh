@@ -403,6 +403,7 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
                               MSSEnd, MSSLevel, clrBlue, -1);
 
                isMSS      = true;
+               reason     = ENUM_HAS_MSS;
                finalCheck = 4;
                return isMSS;
               }
@@ -502,6 +503,7 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
                               MSSEnd, MSSLevel, clrRed, -1);
 
                isMSS      = true;
+               reason     = ENUM_HAS_MSS;
                finalCheck = 4;
                return isMSS;
               }
