@@ -21,6 +21,7 @@ bash backtest.sh
 - HTML report is always from the LAST run: `claudeReport.htm`
 - JSON results: `backtest_last.json`
 - To compare, run the baseline backtest first to regenerate the HTML
+- **Always `touch OrderBlock.mq5 && bash backtest.sh` after any code change** — MT5 caches the `.ex5` binary and will silently backtest stale code otherwise.
 
 ## Architecture Quick Reference
 - `HTOB=16385` = PERIOD_H1 (trend timeframe)
