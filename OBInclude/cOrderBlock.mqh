@@ -305,22 +305,27 @@ bool cOrderBlock::checkForCISDEntry(bool BearishMss = false, ENUM_TIMEFRAMES tf 
    if(MSSLowerLevel <= 0)
       return false;
 
-   double tolerance = 0.3 * getAtr(14, tf);
+   double atr       = getAtr(14, tf);
+   double tolerance = 0.3 * atr;
+   double minBody   = 0.25 * atr;   // require meaningful reaction candle
 
    if(BearishMss == false)
      {
-      // Bullish OB: look for a candle that dipped to/below MSSLowerLevel and closed above it
+      // Bullish OB: look for a post-MSS candle that dips to/below MSSLowerLevel and closes above it
       for(int a = 1; a <= 8; a++)
         {
-         double lo = low(a, tf);
-         double cl = close(a, tf);
-         double op = open(a, tf);
+         // only inspect candles that formed AFTER the MSS break was confirmed
+         if(MSSLowerEnd > 0 && time(a, tf) <= MSSLowerEnd)
+            break;
+         double lo   = low(a, tf);
+         double cl   = close(a, tf);
+         double op   = open(a, tf);
+         double body = cl - op;
          if(lo <= MSSLowerLevel + tolerance &&
             cl > MSSLowerLevel &&
-            cl > op)   // bullish reaction candle
+            body >= minBody)   // bullish reaction with real body
            {
             isCISD     = true;
-            entryPrice = Ask();
             finalCheck = 11;
             return true;
            }
@@ -328,18 +333,20 @@ bool cOrderBlock::checkForCISDEntry(bool BearishMss = false, ENUM_TIMEFRAMES tf 
      }
    else
      {
-      // Bearish OB: look for a candle that spiked to/above MSSLowerLevel and closed below it
+      // Bearish OB: look for a post-MSS candle that spikes to/above MSSLowerLevel and closes below it
       for(int a = 1; a <= 8; a++)
         {
-         double hi = high(a, tf);
-         double cl = close(a, tf);
-         double op = open(a, tf);
+         if(MSSLowerEnd > 0 && time(a, tf) <= MSSLowerEnd)
+            break;
+         double hi   = high(a, tf);
+         double cl   = close(a, tf);
+         double op   = open(a, tf);
+         double body = op - cl;
          if(hi >= MSSLowerLevel - tolerance &&
             cl < MSSLowerLevel &&
-            cl < op)   // bearish reaction candle
+            body >= minBody)   // bearish reaction with real body
            {
             isCISD     = true;
-            entryPrice = Bid();
             finalCheck = 11;
             return true;
            }
