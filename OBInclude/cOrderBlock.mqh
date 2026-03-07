@@ -24,6 +24,7 @@ public:
    void              addStars(int add = 1);
    bool              hasOppositeOB(bool isOpposite);
    bool              checkForMSSEntry(bool BearishMss = false, datetime start = 0, ENUM_TIMEFRAMES tf = PERIOD_CURRENT);
+   bool              checkForCISDEntry(bool BearishMss = false, ENUM_TIMEFRAMES tf = PERIOD_CURRENT);
    bool              checkForMSSBefore(int lookback = 15);
    datetime          checkForCrossLiquidity(datetime mssLastLeg, int candlesBack = 20, ENUM_TIMEFRAMES tf = PERIOD_CURRENT, ENUM_TIMEFRAMES origintf = PERIOD_CURRENT, bool strict = true);
    bool              hasCounterChoch();
@@ -289,6 +290,65 @@ bool cOrderBlock::checkForMSSEntry(bool BearishMss = false, datetime start = 0, 
 //|            search for MSS that created the OB                    |
 //| ob bullish = mss bearish | ob bearish = mss bullish
 //+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| CISD Entry: wait for retest of the LTF MSS break level          |
+//| After MSS is detected (isLowerMss=true), this function confirms  |
+//| entry on a pullback candle that touches MSSLowerLevel from the   |
+//| correct side and shows a reaction (Change in State of Delivery). |
+//+------------------------------------------------------------------+
+bool cOrderBlock::checkForCISDEntry(bool BearishMss = false, ENUM_TIMEFRAMES tf = PERIOD_CURRENT)
+  {
+   if(isCISD == true)
+      return true;
+
+   if(MSSLowerLevel <= 0)
+      return false;
+
+   double tolerance = 0.3 * getAtr(14, tf);
+
+   if(BearishMss == false)
+     {
+      // Bullish OB: look for a candle that dipped to/below MSSLowerLevel and closed above it
+      for(int a = 1; a <= 8; a++)
+        {
+         double lo = low(a, tf);
+         double cl = close(a, tf);
+         double op = open(a, tf);
+         if(lo <= MSSLowerLevel + tolerance &&
+            cl > MSSLowerLevel &&
+            cl > op)   // bullish reaction candle
+           {
+            isCISD     = true;
+            entryPrice = Ask();
+            finalCheck = 11;
+            return true;
+           }
+        }
+     }
+   else
+     {
+      // Bearish OB: look for a candle that spiked to/above MSSLowerLevel and closed below it
+      for(int a = 1; a <= 8; a++)
+        {
+         double hi = high(a, tf);
+         double cl = close(a, tf);
+         double op = open(a, tf);
+         if(hi >= MSSLowerLevel - tolerance &&
+            cl < MSSLowerLevel &&
+            cl < op)   // bearish reaction candle
+           {
+            isCISD     = true;
+            entryPrice = Bid();
+            finalCheck = 11;
+            return true;
+           }
+        }
+     }
+
+   return false;
+  }
+
 bool cOrderBlock::checkForMSSBefore(int lookback = 15)
   {
    if(isMSS == true)
