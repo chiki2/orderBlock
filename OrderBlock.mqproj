@@ -190,11 +190,6 @@
       "path":"OBInclude\\diagnosticPanel.mqh",
       "compile":false,
       "relative_to_project":true
-    },
-    {
-      "path":"OBInclude\\symbolProfile.mqh",
-      "compile":false,
-      "relative_to_project":true
     }
   ],
 
