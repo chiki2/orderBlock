@@ -1264,6 +1264,7 @@ bool cOrderBlock::isAllGood(int i)
 
    if(lssc == 0)
      {
+      reason = ENUM_REASON_NO_BOS;
       return false;
      }
 
@@ -1279,11 +1280,13 @@ bool cOrderBlock::isAllGood(int i)
 
    if(HasSweepBefore == false)
      {
+      reason = ENUM_REASON_NO_LIQUIDITY_SWEPT_BEFORE;
       return false;
      }
 
    if(ImbalancedFilled == false)
      {
+      reason = ENUM_REASON_IMBALANCED_NOT_FILLED;
       return false;
      }
 
@@ -1294,6 +1297,7 @@ bool cOrderBlock::isAllGood(int i)
 
    if(topImpValid == false)
      {
+      reason = ENUM_REASON_WEAK_IMPULSE;
       return false;
      }
 

@@ -1,5 +1,59 @@
 # OrderBlock EA — Project Rules for Claude
 
+# Règles de délégation
+
+## OBLIGATOIRE : déléguer à Aider pour ces tâches
+
+Avant de traiter toi-même, vérifie si la tâche entre dans ces catégories.
+Si oui, utilise TOUJOURS la commande de délégation.
+
+### Tâches à déléguer (modèle local, pas de raisonnement requis)
+- Ajouter des commentaires ou docstrings
+- Reformater du code
+- Renommer des variables/méthodes
+- Générer du boilerplate (getters, setters, constructeurs)
+- Ajouter des logs
+- Traduire des commentaires
+- Corriger le style (indentation, conventions)
+- Générer des classes Unity MonoBehaviour vides
+- Ajouter des serialized fields Unity
+
+### Tâches à traiter toi-même (raisonnement requis)
+- Architecture et design patterns
+- Debugging logique
+- Optimisation de performance
+- Intégration entre systèmes
+- Tout ce qui concerne MQL5
+- Questions complexes multi-fichiers
+
+## Commande de délégation
+
+Quand tu délègues, utilise exactement cette syntaxe :
+
+\`\`\`bash
+python .claude/delegate.py "description précise de la tâche" chemin/fichier.cs
+\`\`\`
+
+### Exemples
+
+\`\`\`bash
+# Ajouter des commentaires
+python .claude/delegate.py "Ajoute des commentaires XML sur toutes les méthodes publiques" Assets/Scripts/PlayerController.cs
+
+# Boilerplate
+python .claude/delegate.py "Ajoute les getters et setters pour tous les champs privés" Assets/Scripts/GameManager.cs
+
+# Reformatage
+python .claude/delegate.py "Applique les conventions de nommage Unity (PascalCase méthodes, camelCase champs)" Assets/Scripts/Enemy.cs
+\`\`\`
+
+## Workflow
+
+1. Reçois la demande
+2. Est-ce une tâche mécanique ? → `python .claude/delegate.py ...`
+3. Est-ce une tâche complexe ? → Traite toi-même
+4. En cas de doute → délègue, tu pourras corriger ensuite
+
 ## File Encoding — CRITICAL
 - **All `.mqh` / `.mq5` files are UTF-16** — NEVER use the Edit tool on them (corrupts BOM)
 - **Exception**: `OBInclude/cOrderBlock.mqh` is **UTF-8** — use `open(path, encoding='utf-8')`
