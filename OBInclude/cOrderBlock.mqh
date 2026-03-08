@@ -46,6 +46,7 @@ public:
    bool              IsFairValueGapFilled();
    bool              checkInZone();
    bool              isAllGood(int i);
+   bool              isMinQuality();
    void              trashme(NoTradeReason r);
    bool              IsIndexValid(int index, orderBlock &array[]);
   };
@@ -1407,6 +1408,27 @@ bool cOrderBlock::isAllGood(int i)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
+bool cOrderBlock::isMinQuality()
+  {
+   // Minimum quality gate: MSS + FVG + impulse + daily bias — no sweep required, no FVG-fill required
+   if(isMitigated)                                       return false;
+   if(lssc == 0)                                         return false;
+   if(isMSS == false)                                    return false;
+   if(isImbalanced == false || imbalancePrice < 0.0)     return false;
+   if(topImpValid == false)                              return false;
+
+   // Daily bias — fast reversal guard (always re-check)
+   if(g_dailyBiasEnabled)
+     {
+      double dailyOpen = iOpen(_Symbol, PERIOD_D1, 0);
+      bool bullishBias = (bidPrice > dailyOpen);
+      if(isBear == false && !bullishBias) return false;
+      if(isBear == true  &&  bullishBias) return false;
+     }
+
+   return true;
+  }
+
 void cOrderBlock::trashme(NoTradeReason r)
   {
    isDone  = true;
