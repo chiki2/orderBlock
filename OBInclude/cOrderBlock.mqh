@@ -258,30 +258,40 @@ bool cOrderBlock::checkForMSSEntry(bool BearishMss = false, datetime start = 0, 
       // OpenCL candidate: backward scan over candles. If many such scans are
       // performed in bulk (different objects/timeframes), consider a kernel that
       // checks conditions per-candle in parallel. Keep this CPU loop for legacy.
-      for(int a = lastHighIndex; a >= 0; a--)
-        {
-         MSSLowerBreakLevel = (isBullishCandle(a) == false) ? close(a, tf) : open(a, tf);
-         MSSLowerStart      = lastLowTime;
-         MSSLowerLevel      = lastLowLevel;
-         if(MSSLowerBreakLevel < MSSLowerLevel &&
-            detectFVG(a, true, MSSLowerStart, tf) == true &&
-            lastLowIndex > a)
-           {
-            if(isLowerMss == false)
-              {
-               addStars();
-               entryPrice  = Bid();
-               MSSLowerEnd = time(a, tf);
-               drawSwingPoint(name + "-MSS-lower" + TimeToString(MSSLowerStart), MSSLowerStart, MSSLowerLevel, 77, clrRed, -1, "MSS");
-               drawBreakLevel(name + "-mss-lower-break" + TimeToString(MSSLowerEnd), MSSLowerStart, MSSLowerLevel,
-                              MSSLowerEnd, MSSLowerLevel, clrRed, -1);
+      // ── GPU-accelerated: pre-filter bars by break-level, FVG check on CPU hits only
+        MSSLowerStart = lastLowTime;
+        MSSLowerLevel = lastLowLevel;
+        int      gpu_flags[];
+        bool     gpu_ok = GPU_GetMSSBreakFlags(lastHighIndex, lastLowLevel, true, lastLowIndex, tf, gpu_flags);
+        for(int a = lastHighIndex; a >= 0; a--)
+          {
+           // CPU fallback: evaluate break condition here; GPU path: use pre-computed flag
+           if(gpu_ok)
+             {
+              if(a >= ArraySize(gpu_flags) || gpu_flags[a] == 0) continue;
+             }
+           else
+             {
+              MSSLowerBreakLevel = (isBullishCandle(a) == false) ? close(a, tf) : open(a, tf);
+              if(!(MSSLowerBreakLevel < MSSLowerLevel && lastLowIndex > a)) continue;
+             }
+           if(detectFVG(a, true, MSSLowerStart, tf) == true)
+             {
+              if(isLowerMss == false)
+                {
+                 addStars();
+                 entryPrice  = Bid();
+                 MSSLowerEnd = time(a, tf);
+                 drawSwingPoint(name + "-MSS-lower" + TimeToString(MSSLowerStart), MSSLowerStart, MSSLowerLevel, 77, clrRed, -1, "MSS");
+                 drawBreakLevel(name + "-mss-lower-break" + TimeToString(MSSLowerEnd), MSSLowerStart, MSSLowerLevel,
+                                MSSLowerEnd, MSSLowerLevel, clrRed, -1);
 
-               isLowerMss = true;
-               finalCheck = 10;
-               return isLowerMss;
-              }
-           }
-        }
+                 isLowerMss = true;
+                 finalCheck = 10;
+                 return isLowerMss;
+                }
+             }
+          }
      }
 
    return false;
