@@ -3,3 +3,6 @@ Examples/*
 Free Robots/*
 Market/*
 .aider*
+ob_dataset*.csv
+ob_dataset_traded.csv
+ob_model.pkl
