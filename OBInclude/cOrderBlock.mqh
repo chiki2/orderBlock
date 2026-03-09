@@ -456,7 +456,7 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
         }
 
       int lastCandleCheck = (MSSLastCandleChecked == 0) ? lastLowIndex : bar(MSSLastCandleChecked, CTOB);
-      if(lastCandleCheck > 12)
+      if(lastCandleCheck > 30)
         {
          trashme(ENUM_REASON_NO_MSS);
          return false;
@@ -556,7 +556,7 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
         }
 
       int lastCandleCheck = (MSSLastCandleChecked == 0) ? lastHighIndex : bar(MSSLastCandleChecked, CTOB);
-      if(lastCandleCheck > 12)
+      if(lastCandleCheck > 30)
         {
          trashme(ENUM_REASON_NO_MSS);
          return false;
