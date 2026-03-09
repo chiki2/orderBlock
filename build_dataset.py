@@ -101,15 +101,20 @@ def collect_csvs(pattern=None):
     if pattern:
         paths = sorted(glob.glob(pattern))
     else:
-        # Primary: tester agent 3000 (main backtest runs there)
-        agent_glob = str(TESTER_ROOT / "Agent-127.0.0.1-3000/MQL5/Files/ob_data_XAUUSD*.csv")
-        paths = sorted(glob.glob(agent_glob))
-        if not paths:
-            # Fallback: all agents
-            paths = sorted(glob.glob(str(TESTER_ROOT / "*/MQL5/Files/ob_data_XAUUSD*.csv")))
+        # All tester agents (all symbols/date-ranges)
+        all_agents = sorted(glob.glob(str(TESTER_ROOT / "*/MQL5/Files/ob_data_*.csv")))
+        # Analytics archive (historical runs saved manually)
+        analytics = sorted(glob.glob(str(OUT_DIR / "analytics/ob_data_*.csv")))
+        # Deduplicate by basename (prefer tester copy when both exist)
+        seen = set()
+        for p in all_agents + analytics:
+            bn = Path(p).name
+            if bn not in seen:
+                seen.add(bn)
+                paths.append(p)
         if not paths:
             paths = sorted(glob.glob(str(LIVE_ROOT / "ob_data_XAUUSD*.csv")))
-    return paths
+    return sorted(paths)
 
 # ── main pipeline ────────────────────────────────────────────────────────────
 def load_events(csv_path):
