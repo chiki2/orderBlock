@@ -41,6 +41,7 @@ public:
    bool              PartialClose(double percent);
    void              ManagePartialTP();
    bool              checkValidLssc();
+   bool              CheckOBBreakerBlock();
    bool              checkValidImbalance();
    bool              checkLiquiditySweepBeforeOB(datetime mssLeg, int lookBack = 80);
    bool              IsFairValueGapFilled();
@@ -1445,6 +1446,61 @@ void cOrderBlock::trashme(NoTradeReason r)
    stars   = 0;
    OBcolor = clrGray;
    reason  = r;
+  }
+
+
+//+------------------------------------------------------------------+
+//| CheckOBBreakerBlock - Detects when OB becomes a BreakerBlock   |
+//| Called when isMitigated = true and we wait for price to break  |
+//| through the OB zone. If price breaks, we flip isBear and mark  |
+//| it as a BreakerBlock.                                          |
+//+------------------------------------------------------------------+
+bool cOrderBlock::CheckOBBreakerBlock()
+  {
+   if(!inpEnableBreakerBlock)
+      return false;
+
+   Print("DEBUG CheckOBBreakerBlock: isMitigated=", isMitigated, ", isBreakerBlock=", isBreakerBlock);
+
+   if(!isMitigated)
+      return false;
+
+   if(isBreakerBlock)
+      return true;
+
+   // Bullish OB (original buy zone): check if price breaks below lowPrice
+   if(isBear == false)
+     {
+      if(bidPrice < lowPrice)
+        {
+         isBreakerBlock = true;
+         breakerBlockTime = TimeCurrent();
+         breakerBlockPrice = lowPrice;
+         isBear = true;  // Flip direction - now trading bearish
+         OBcolor = clrOrange;  // Visual indication
+         reason = ENUM_REASON_BREAKERBLOCK;
+         Print("DEBUG CheckOBBreakerBlock: Bullish OB became BreakerBlock! isBear flipped to ", isBear);
+         return true;
+        }
+     }
+
+   // Bearish OB (original sell zone): check if price breaks above highPrice
+   if(isBear == true)
+     {
+      if(askPrice > highPrice)
+        {
+         isBreakerBlock = true;
+         breakerBlockTime = TimeCurrent();
+         breakerBlockPrice = highPrice;
+         isBear = false;  // Flip direction - now trading bullish
+         OBcolor = clrOrange;  // Visual indication
+         reason = ENUM_REASON_BREAKERBLOCK;
+         Print("DEBUG CheckOBBreakerBlock: Bearish OB became BreakerBlock! isBear flipped to ", isBear);
+         return true;
+        }
+     }
+
+   return false;
   }
 
 //+------------------------------------------------------------------+
