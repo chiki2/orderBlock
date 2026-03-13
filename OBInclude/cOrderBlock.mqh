@@ -1457,15 +1457,13 @@ void cOrderBlock::trashme(NoTradeReason r)
 //+------------------------------------------------------------------+
 bool cOrderBlock::CheckOBBreakerBlock()
   {
-   if(!inpEnableBreakerBlock)
+   if(inpEnableBreakerBlock == false)
       return false;
 
-   Print("DEBUG CheckOBBreakerBlock: isMitigated=", isMitigated, ", isBreakerBlock=", isBreakerBlock);
-
-   if(!isMitigated)
+   if(isMitigated == false)
       return false;
 
-   if(isBreakerBlock)
+   if(isBreakerBlock == true)
       return true;
 
    // Bullish OB (original buy zone): check if price breaks below lowPrice
