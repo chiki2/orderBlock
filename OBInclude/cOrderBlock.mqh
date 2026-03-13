@@ -317,9 +317,9 @@ bool cOrderBlock::checkForCISDEntry(bool BearishMss = false, ENUM_TIMEFRAMES tf 
    if(MSSLowerLevel <= 0)
       return false;
 
-   double atr       = getAtr(14, tf);
-   double tolerance = 0.3 * atr;
-   double minBody   = 0.25 * atr;   // require meaningful reaction candle
+   double _atr       = getAtr(14, tf);
+   double _tolerance = 0.3 * _atr;
+   double minBody   = 0.25 * _atr;   // require meaningful reaction candle
 
    if(BearishMss == false)
      {
