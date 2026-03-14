@@ -759,6 +759,7 @@ void cOrderBlock::init(int myIndex, datetime startT,
    topImpLevel    = -1.0;
    topImpTime     = 0;
    topImpValid    = false;
+   isBreakerBlock = false;
    entryPrice     = -1.0;
    stopLoss       = -1.0;
    takeProfit     = -1.0;
@@ -1466,30 +1467,30 @@ bool cOrderBlock::CheckOBBreakerBlock()
    if(isBreakerBlock == true)
       return true;
 
-   // Bullish OB (original buy zone): check if price breaks below lowPrice
-   if(isBear == false)
-     {
-      if(bidPrice < lowPrice)
-        {
-         isBreakerBlock = true;
-         breakerBlockTime = TimeCurrent();
-         breakerBlockPrice = lowPrice;
-         isBear = true;  // Flip direction - now trading bearish
-         OBcolor = clrOrange;  // Visual indication
-         reason = ENUM_REASON_BREAKERBLOCK;
-         Print("DEBUG CheckOBBreakerBlock: Bullish OB became BreakerBlock! isBear flipped to ", isBear);
-         return true;
-        }
-     }
+    // Bullish OB (original buy zone): check if price breaks below mitigatedLine
+    if(isBear == false)
+      {
+       if(bidPrice < mitigatedLine)
+         {
+          isBreakerBlock = true;
+          breakerBlockTime = TimeCurrent();
+          breakerBlockPrice = mitigatedLine;
+          isBear = true;  // Flip direction - now trading bearish
+          OBcolor = clrOrange;  // Visual indication
+          reason = ENUM_REASON_BREAKERBLOCK;
+          Print("DEBUG CheckOBBreakerBlock: Bullish OB became BreakerBlock! isBear flipped to ", isBear);
+          return true;
+         }
+      }
 
-   // Bearish OB (original sell zone): check if price breaks above highPrice
-   if(isBear == true)
-     {
-      if(askPrice > highPrice)
+    // Bearish OB (original sell zone): check if price breaks above mitigatedLine
+    if(isBear == true)
+      {
+       if(askPrice > mitigatedLine)
         {
          isBreakerBlock = true;
          breakerBlockTime = TimeCurrent();
-         breakerBlockPrice = highPrice;
+          breakerBlockPrice = mitigatedLine;
          isBear = false;  // Flip direction - now trading bullish
          OBcolor = clrOrange;  // Visual indication
          reason = ENUM_REASON_BREAKERBLOCK;
