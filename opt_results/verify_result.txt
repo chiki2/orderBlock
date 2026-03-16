@@ -1,0 +1,74 @@
+[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m Step 1/3: Checking EA binary[0m
+[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[32m  OrderBlock.ex5 is up to date[0m
+[1m[0m
+[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m Step 2/3: Running Strategy Tester[0m
+[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+  Symbol:  XAUUSD
+  Period:  M15
+  Range:   2022.01.01 → 2026.01.01
+  Model:   4  (0=tick 1=1min-OHLC 4=real-ticks)
+  Deposit: 10000 USD  Leverage: 1:500
+  Copying claude.set → MQL5/presets/claude.set
+  MT5 launched (pid 446340) — running test...
+  ... 0s elapsed  ... 2s elapsed  ... 4s elapsed  ... 6s elapsed  ... 8s elapsed  ... 10s elapsed  ... 12s elapsed  ... 14s elapsed  ... 16s elapsed  ... 18s elapsed  ... 20s elapsed  ... 22s elapsed  ... 24s elapsed  ... 26s elapsed  ... 28s elapsed  ... 30s elapsed  ... 32s elapsed  ... 34s elapsed  ... 36s elapsed  ... 38s elapsed  ... 40s elapsed  ... 42s elapsed  ... 44s elapsed  ... 46s elapsed  ... 48s elapsed  ... 50s elapsed  ... 52s elapsed  ... 54s elapsed  ... 56s elapsed  ... 58s elapsed  ... 60s elapsed  ... 62s elapsed  ... 64s elapsed  ... 66s elapsed  ... 68s elapsed  ... 70s elapsed  ... 72s elapsed  ... 74s elapsed  ... 76s elapsed  ... 78s elapsed  ... 80s elapsed  ... 82s elapsed  ... 84s elapsed  ... 86s elapsed  ... 88s elapsed  ... 90s elapsed  ... 92s elapsed  ... 94s elapsed  ... 96s elapsed  ... 98s elapsed  ... 100s elapsed  ... 102s elapsed  ... 104s elapsed  ... 106s elapsed  ... 108s elapsed  ... 110s elapsed  ... 112s elapsed  ... 114s elapsed  ... 116s elapsed  ... 118s elapsed  ... 120s elapsed  ... 122s elapsed  ... 124s elapsed  ... 126s elapsed  ... 128s elapsed  ... 130s elapsed  ... 132s elapsed  ... 134s elapsed  ... 136s elapsed  ... 138s elapsed  ... 140s elapsed  ... 142s elapsed  ... 144s elapsed  ... 146s elapsed  ... 148s elapsed  ... 150s elapsed  ... 152s elapsed  ... 154s elapsed  ... 156s elapsed  ... 158s elapsed  ... 160s elapsed  ... 162s elapsed  ... 164s elapsed  ... 166s elapsed  ... 168s elapsed  ... 170s elapsed  ... 172s elapsed  ... 174s elapsed  ... 176s elapsed  ... 178s elapsed  ... 180s elapsed  ... 182s elapsed  ... 184s elapsed  ... 186s elapsed  ... 188s elapsed  ... 190s elapsed  ... 192s elapsed  ... 194s elapsed  ... 196s elapsed  ... 198s elapsed  ... 200s elapsed  ... 202s elapsed  ... 204s elapsed  ... 206s elapsed  ... 208s elapsed  ... 210s elapsed  ... 213s elapsed  ... 215s elapsed  ... 217s elapsed  ... 219s elapsed  ... 221s elapsed  ... 223s elapsed  ... 225s elapsed  ... 227s elapsed  ... 229s elapsed  ... 231s elapsed  ... 233s elapsed  ... 235s elapsed  ... 237s elapsed  ... 239s elapsed  ... 241s elapsed  ... 243s elapsed  ... 245s elapsed  ... 247s elapsed  ... 249s elapsed  ... 251s elapsed  ... 253s elapsed  ... 255s elapsed  ... 257s elapsed  ... 259s elapsed  ... 261s elapsed  ... 263s elapsed  ... 265s elapsed  ... 267s elapsed  ... 269s elapsed  ... 271s elapsed  ... 273s elapsed  ... 275s elapsed  ... 277s elapsed  ... 279s elapsed  ... 281s elapsed  ... 283s elapsed  ... 285s elapsed  ... 287s elapsed  ... 289s elapsed  ... 291s elapsed  ... 293s elapsed  ... 295s elapsed  ... 297s elapsed  ... 299s elapsed  ... 301s elapsed  ... 303s elapsed  ... 305s elapsed  ... 307s elapsed  ... 309s elapsed  ... 311s elapsed  ... 313s elapsed  ... 315s elapsed  ... 317s elapsed  ... 319s elapsed  ... 321s elapsed  ... 323s elapsed  ... 325s elapsed  ... 327s elapsed  ... 329s elapsed  ... 331s elapsed  ... 333s elapsed  ... 335s elapsed  ... 337s elapsed  ... 339s elapsed  ... 341s elapsed  ... 343s elapsed  ... 345s elapsed  ... 347s elapsed  ... 349s elapsed  ... 351s elapsed  ... 353s elapsed  ... 355s elapsed  ... 357s elapsed  ... 359s elapsed  ... 361s elapsed  ... 363s elapsed  ... 365s elapsed  ... 367s elapsed  ... 369s elapsed  ... 371s elapsed  ... 373s elapsed  ... 375s elapsed  ... 377s elapsed  ... 379s elapsed  ... 381s elapsed  ... 383s elapsed  ... 385s elapsed  ... 387s elapsed  ... 389s elapsed  ... 391s elapsed  ... 393s elapsed  ... 395s elapsed  ... 397s elapsed  ... 399s elapsed  ... 401s elapsed  ... 403s elapsed  ... 405s elapsed  ... 407s elapsed  ... 409s elapsed  ... 411s elapsed  ... 413s elapsed  ... 415s elapsed  ... 417s elapsed  ... 419s elapsed  ... 421s elapsed  ... 423s elapsed  ... 425s elapsed  ... 427s elapsed  ... 429s elapsed  ... 431s elapsed  ... 433s elapsed  ... 435s elapsed  ... 437s elapsed  ... 439s elapsed  ... 441s elapsed  ... 443s elapsed  ... 445s elapsed  ... 447s elapsed  ... 449s elapsed  ... 451s elapsed  ... 453s elapsed  ... 455s elapsed  ... 457s elapsed  ... 459s elapsed  ... 461s elapsed  ... 463s elapsed  ... 465s elapsed  ... 467s elapsed  ... 469s elapsed  ... 471s elapsed  ... 473s elapsed  ... 475s elapsed  ... 477s elapsed  ... 479s elapsed  ... 481s elapsed  ... 483s elapsed  ... 485s elapsed  ... 487s elapsed  ... 489s elapsed  ... 491s elapsed  ... 493s elapsed  ... 495s elapsed  ... 497s elapsed  ... 500s elapsed  ... 502s elapsed  ... 504s elapsed  ... 506s elapsed  ... 508s elapsed  ... 510s elapsed  ... 512s elapsed  ... 514s elapsed  ... 516s elapsed  ... 518s elapsed  ... 520s elapsed  ... 522s elapsed  ... 524s elapsed  ... 526s elapsed  ... 528s elapsed  ... 530s elapsed  ... 532s elapsed  ... 534s elapsed  ... 536s elapsed  ... 538s elapsed  ... 540s elapsed  ... 542s elapsed  ... 544s elapsed  ... 546s elapsed  ... 548s elapsed
+  Finished after 551s
+[1m[0m
+[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[1m Step 3/3: Parsing results[0m
+[1m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+  Log: /home/charles/.mt5/drive_c/Program Files/MetaTrader 5/Tester/Agent-127.0.0.1-3000/logs/20260310.log
+[1m[0m
+[1m  ┌─────────────────────────────────────────┐[0m
+[1m  │         BACKTEST RESULTS                │[0m
+[1m  ├─────────────────────────────────────────┤[0m
+  │  Balance (pips)                       0 │
+  │  OnTester score                       0 │
+  │  Win rate                  83/123 (67%) │
+[1m  ├─────────────────────────────────────────┤[0m
+  │  Total OBs                            0 │
+  │  → pass VALID_OB                    0 │
+  │  → pass MSS                         0 │
+  │  → pass SWEEP                       0 │
+  │  → pass TOP_IMP                     0 │
+  │  → TRADED                       0 (?) │
+[1m  ├─────────────────────────────────────────┤[0m
+  │  Overdue                              0 │
+  │  Mitigated                            0 │
+  │  No MSS                               0 │
+  │  Skipped (ongoing)                    0 │
+[1m  ├─────────────────────────────────────────┤[0m
+  │  Profit factor                     1.22 │
+  │  Expected payoff                 363.76 │
+  │  Sharpe ratio                      8.30 │
+  │  Max drawdown          63 378.55 70.72% │
+  │  Max DD %              70.72% 63 378.55 │
+  │  Recovery factor                   0.65 │
+  │  Total trades                       123 │
+  │  Profit trades                84 68.29% │
+  │  Loss trades                  39 31.71% │
+[1m  ├─────────────────────────────────────────┤[0m
+  │  Test duration              0:08:59.546 │
+  │  Wall time                         551s │
+  │  Ticks                        160812693 │
+[1m  └─────────────────────────────────────────┘[0m
+  Report: /home/charles/.mt5/drive_c/Program Files/MetaTrader 5/claudeReport.htm
+[1m[0m
+[1m  ┌─────────────────────────────────────────┐[0m
+[1m  │     DELTA vs BASELINE                   │[0m
+[1m  └─────────────────────────────────────────┘[0m
+  [31m▼[0m  balance                20514.66 → 0.00[31m (-100.0%)[0m
+  [31m▼[0m  ontester               4 → 0[31m (-100.0%)[0m
+  [31m▼[0m  profit_factor          4.17 → 1.22[31m[0m
+  [31m▼[0m  sharpe                 13.16 → 8.30[31m[0m
+  [33m─[0m  max_dd_pct             10.30% 2 110.04 → 70.72% 63 378.55
+  [31m▼[0m  recovery_factor        3.54 → 0.65[31m[0m
+  [31m▼[0m  traded                 17 → 0[31m (-100.0%)[0m
+  [31m▼[0m  overdue                3 → 0[31m[0m
+  [31m▼[0m  mitigated              1165 → 0[31m[0m
+  [31m▼[0m  no_mss                 1643 → 0[31m[0m
+  [32m▲[0m  wall_time_s            83 → 551[32m[0m
+[1m[0m
+  Full results: /home/charles/.mt5/drive_c/Program Files/MetaTrader 5/MQL5/Experts/orderBlock/backtest_last.json

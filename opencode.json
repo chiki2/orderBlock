@@ -1,0 +1,15 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "mql5": {
+      "type": "local",
+      "command": [
+        "node",
+        "/mnt/data/codegraph/dist/bin/codegraph.js",
+        "serve",
+        "--mcp"
+      ],
+      "enabled": true
+    }
+  }
+}

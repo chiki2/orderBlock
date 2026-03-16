@@ -1,0 +1,18 @@
+Filters round — best results (merged from 4 agents, 40 combos, 2025-only)
+
+  #1  Pass=15  Score=2.6636
+       inpRequireD1Trend = false  (same score as true → kept true for safety)
+       StopLossStartMode = 3      (SWEEP mode, was already 3)
+       fiboEntry         = 0.55   (was 0.65)
+
+  #2  Pass=18  Score=2.5733
+       inpRequireD1Trend = false
+       StopLossStartMode = 3
+       fiboEntry         = 0.70
+
+  #3  Pass=19  Score=2.4699
+       inpRequireD1Trend = false
+       StopLossStartMode = 3
+       fiboEntry         = 0.75
+
+APPLIED: inpRequireD1Trend=true, StopLossStartMode=3, fiboEntry=0.55
