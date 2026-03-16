@@ -15,6 +15,14 @@ int tests_passed=0;
 #include "TestHelpers.mqh"
 #include "TestLangs.mqh"
 #include "TestOBStruct.mqh"
+#include "TestOrderBlock2.mqh"
+#include "TestTypes.mqh"
+#include "TestGlobals.mqh"
+#include "TestDrawOB.mqh"
+#include "TestExportOB.mqh"
+#include "TestAltStrat.mqh"
+#include "TestSQLite.mqh"
+#include "TestDiagnosticPanel.mqh"
 
 
 //+------------------------------------------------------------------+
@@ -134,13 +142,70 @@ void TestQueue()
       PrintFormat("%s passed", test_name);
 
 //--- OBStruct.mqh: pure struct methods (TestOBStruct.mqh)
-   test_name="Test OBStruct";
-   PrintFormat("%s started", test_name);
-   if(!RunOBStructTests(test_name))
-      PrintFormat("%s failed", test_name);
-   else
-      PrintFormat("%s passed", test_name);
-  }
+    test_name="Test OBStruct";
+    PrintFormat("%s started", test_name);
+    if(!RunOBStructTests(test_name))
+       PrintFormat("%s failed", test_name);
+    else
+       PrintFormat("%s passed", test_name);
+
+//--- Additional tests for remaining OBInclude modules
+    test_name="Test OrderBlock2";
+    PrintFormat("%s started", test_name);
+    if(!RunOrderBlock2Tests(test_name))
+       PrintFormat("%s failed", test_name);
+    else
+       PrintFormat("%s passed", test_name);
+
+    test_name="Test Types";
+    PrintFormat("%s started", test_name);
+    if(!RunTypesTests(test_name))
+       PrintFormat("%s failed", test_name);
+    else
+       PrintFormat("%s passed", test_name);
+
+    test_name="Test Globals";
+    PrintFormat("%s started", test_name);
+    if(!RunGlobalsTests(test_name))
+       PrintFormat("%s failed", test_name);
+    else
+       PrintFormat("%s passed", test_name);
+
+    test_name="Test DrawOB";
+    PrintFormat("%s started", test_name);
+    if(!RunDrawOBTests(test_name))
+       PrintFormat("%s failed", test_name);
+    else
+       PrintFormat("%s passed", test_name);
+
+    test_name="Test ExportOB";
+    PrintFormat("%s started", test_name);
+    if(!RunExportOBTests(test_name))
+       PrintFormat("%s failed", test_name);
+    else
+       PrintFormat("%s passed", test_name);
+
+    test_name="Test AltStrat";
+    PrintFormat("%s started", test_name);
+    if(!RunAltStratTests(test_name))
+       PrintFormat("%s failed", test_name);
+    else
+       PrintFormat("%s passed", test_name);
+
+    test_name="Test SQLite";
+    PrintFormat("%s started", test_name);
+    if(!RunSQLiteTests(test_name))
+       PrintFormat("%s failed", test_name);
+    else
+       PrintFormat("%s passed", test_name);
+
+    test_name="Test DiagnosticPanel";
+    PrintFormat("%s started", test_name);
+    if(!RunDiagnosticPanelTests(test_name))
+       PrintFormat("%s failed", test_name);
+    else
+       PrintFormat("%s passed", test_name);
+   }
 //+------------------------------------------------------------------+
 //| Script program start function                                    |
 //+------------------------------------------------------------------+

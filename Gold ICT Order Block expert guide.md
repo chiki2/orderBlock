@@ -341,3 +341,189 @@ Before going live on XAUUSD:
 | Max Drawdown | 11.48% |
 | Recovery Factor | 3.37 |
 | Final Balance | $26,520 |
+
+---
+
+## New Features (v1.60+)
+
+### Multi-Language Support
+
+The EA now supports multiple languages for all UI text and trade messages:
+
+| Language | Code | Status |
+|----------|------|--------|
+| English | EN | Default |
+| French | FR | Full |
+| Spanish | ES | Full |
+| German | DE | Full |
+| Portuguese | PT | Full |
+| Italian | IT | Full |
+
+**To change language:**
+1. Go to EA settings
+2. Find the language input (or set via `inpLanguage` parameter)
+3. Select your preferred language
+4. Restart the EA
+
+All trade messages, alerts, and panel text will display in the selected language.
+
+---
+
+### BreakerBlock Strategy (v1.60+)
+
+The **BreakerBlock** feature allows the EA to flip a mitigated Order Block into a trading opportunity in the opposite direction.
+
+**How it works:**
+1. An OB is detected and trades normally
+2. When price mitigates the OB (crosses the midline), the OB is marked as "BreakerBlock"
+3. If price then breaks through the OB zone in the opposite direction, the EA flips the trade direction
+4. This creates a new trading opportunity from the same OB structure
+
+**Parameters:**
+
+| Parameter | Default | Description |
+|---|---|---|
+| **inpEnableBreakerBlock** | false | Enable BreakerBlock strategy |
+| **inpBreakerBlockSLBuffer** | 1.0 | Stop loss buffer in ATR multiples |
+
+**When to use:**
+- Trending markets with clear BOS (Break of Structure)
+- When you want to maximize each OB structure
+- Works best on higher timeframes (H1+)
+
+**Note:** This feature is disabled by default. Enable only after backtesting on your specific symbol.
+
+---
+
+### Low Quality Trades (v1.60+)
+
+**inpLowQualityTrades** allows trading Order Blocks that don't meet the full quality criteria (missing liquidity sweep).
+
+| Parameter | Default | Description |
+|---|---|---|
+| **inpLowQualityTrades** | false | Trade sub-quality OBs at fib100 TP |
+
+**What's excluded in low-quality mode:**
+- No liquidity sweep required before OB
+- Still requires: MSS + FVG + impulse
+- Take profit limited to Fibonacci 1.0 (100% of OB zone)
+
+**When to use:**
+- High-volatility periods where sweep signals are rare
+- When you want more trading opportunities
+- Recommended TP: fib100 (not 1.127)
+
+---
+
+### Early Breakeven (v1.60+)
+
+**inpEarlyBreakEven** moves the stop loss to breakeven BEFORE the first take profit is reached.
+
+| Parameter | Default | Description |
+|---|---|---|
+| **inpEarlyBreakEven** | false | Move SL to breakeven before TP1 |
+| **inpBreakEvenRatio** | 0.7 | Fraction of TP1 distance (0.7 = 70%) |
+
+**How it works:**
+- Example: TP1 is 100 points away
+- With ratio 0.7, SL moves to breakeven when price reaches 70 points in profit
+- Protects against reversals after partial moves
+
+**Warning:** This feature can cut winners short. Disabled by default.
+
+---
+
+### Mitigated Reentry (v1.60+)
+
+**inpAllowMitigatedReentry** allows re-entering an OB zone after it has been mitigated, if price returns with momentum.
+
+| Parameter | Default | Description |
+|---|---|---|
+| **inpAllowMitigatedReentry** | false | Allow OB re-entry after mitigation |
+
+**When enabled:**
+- After OB is mitigated, EA monitors for return to the zone
+- If price returns with strong momentum (FVG present), may re-enter
+- Useful in ranging markets
+
+---
+
+## Troubleshooting Common Issues
+
+### EA Not Trading
+
+**Check these in order:**
+
+1. **Kill Zone Filter** — Is current time within KZ hours?
+   - Display shows KZ status in top-left corner
+   
+2. **Spread** — Is `inpMaxSpread` too low?
+   - Try setting to 0 (disabled) to test
+   
+3. **Trend Filters** — Are trend filters blocking trades?
+   - Check the HTF Trend display (enable `displayHTFTrend`)
+   
+4. **News Filter** — Is news blocking trades?
+   - Check `EnableCheckNews` and calendar access
+
+5. **Margin** — Do you have enough free margin?
+   - Check the diagnostic panel on startup
+
+### Too Many/Few Trades
+
+| Issue | Solution |
+|-------|----------|
+| Too few trades | Enable Kill Zone, reduce trend filters |
+| Too many trades | Increase `inpMinRR`, enable trend filters |
+| Trades on Monday/Friday | Enable `forbidMondayFriday` |
+
+### Trade Losses
+
+| Issue | Solution |
+|-------|----------|
+| Stop loss hit frequently | Increase `ATR_multiplier` to 2.5-3.0 |
+| Wrong direction | Enable `inpDailyBiasEnabled`, check trend |
+| Early SL | Increase `inpMinSLPoints` minimum |
+
+---
+
+## Quick Reference Card
+
+### Recommended Settings for XAUUSD
+
+| Category | Setting | Value |
+|----------|---------|-------|
+| **Profile** | Risk Profile | Conservative |
+| **Spread** | Max Spread | 30-50 |
+| **Entry** | Entry Mode | FIBO50 |
+| **TP** | First TP | 1.127 |
+| **SL** | ATR Multiplier | 2.0 |
+| **Kill Zone** | Enabled | Yes (11-14, 20-23) |
+| **Trend** | Daily Bias | Enabled |
+| **MM** | Risk | 10-20% |
+
+### Signal Icons Meaning
+
+| Icon | Meaning |
+|------|---------|
+| ⭐ | Order Block detected |
+| 😊 | Liquidity sweep confirmed (MSS) |
+| 📊 | Fair Value Gap present |
+| 🚨 | Trade triggered |
+| ✅ | Take profit hit |
+| ❌ | Stop loss hit |
+| 🔄 | BreakerBlock activated |
+
+---
+
+## Support & Feedback
+
+- **MQL5 Page**: https://www.mql5.com/en/market/product/143851
+- **ICT Concepts**: https://icttrading.org/
+- **Documentation**: Check the `docs/` folder in the EA archive
+
+For best results, start with the Conservative profile and only change one parameter at a time. Track results for at least 15-20 trades before optimizing further.
+
+---
+
+*Last updated: March 2026 | Version 1.60*
