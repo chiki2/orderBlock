@@ -1,0 +1,66 @@
+[
+  {
+    "test": "1_lowQuality_ON",
+    "traded": 33,
+    "completed": 27,
+    "win": "21/27 (78%)",
+    "pf": 2.02,
+    "balance": 20466.25
+  },
+  {
+    "test": "2_noD1trend",
+    "traded": 33,
+    "completed": 27,
+    "win": "21/27 (78%)",
+    "pf": 2.02,
+    "balance": 20466.25
+  },
+  {
+    "test": "3_noMSS_FVG",
+    "traded": 33,
+    "completed": 29,
+    "win": "21/29 (72%)",
+    "pf": 1.46,
+    "balance": 14925.49
+  },
+  {
+    "test": "4_reentry",
+    "traded": 33,
+    "completed": 37,
+    "win": "26/37 (70%)",
+    "pf": 1.0,
+    "balance": 14925.49
+  },
+  {
+    "test": "5_smallBody",
+    "traded": 33,
+    "completed": 27,
+    "win": "21/27 (78%)",
+    "pf": 2.02,
+    "balance": 20466.25
+  },
+  {
+    "test": "6_dailyBias",
+    "traded": 33,
+    "completed": 27,
+    "win": "21/27 (78%)",
+    "pf": 2.02,
+    "balance": 20466.25
+  },
+  {
+    "test": "7_outdated40",
+    "traded": 33,
+    "completed": 20,
+    "win": "15/20 (75%)",
+    "pf": 0.74,
+    "balance": 20466.25
+  },
+  {
+    "test": "8_outdated120",
+    "traded": 34,
+    "completed": 28,
+    "win": "21/29 (72%)",
+    "pf": 1.61,
+    "balance": 17616.03
+  }
+]
