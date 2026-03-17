@@ -228,7 +228,50 @@ But pending order may still be waiting to fill!
 | Only redraw on state change | Medium |
 | Batch order operations | Medium |
 
-### 5.3 Robustness
+### 5.3 Recommended: 15 Core Parameters
+
+After analysis, here are the **15 core parameters** I would recommend keeping:
+
+#### Trading Logic (5 params)
+| Parameter | Recommended | Notes |
+|-----------|-------------|-------|
+| `inpEntryMode` | FIBO50 or AUTO | Entry trigger |
+| `fiboEntry` | 0.618 | **Already optimized** |
+| `fibo1rstTP` | 1.5-2.0 × ATR | Single TP level |
+| `ATR_multiplier` | 2.0 | SL distance |
+| `outdatedOB` | 80 | OB validity period |
+
+#### Trend & Filters (4 params)
+| Parameter | Recommended | Notes |
+|-----------|-------------|-------|
+| `inpRequireD1Trend` | true | Daily trend filter |
+| `ADX_Threshold` | 25 | Momentum filter |
+| `inpMaxSpread` | 30-50 | Spread protection |
+| `typeOfTrade` | BOTH | Direction |
+
+#### Risk Management (4 params)
+| Parameter | Recommended | Notes |
+|-----------|-------------|-------|
+| `enableMM` | true | Auto lot sizing |
+| `riskByTrade` | 1-2% | Risk per trade |
+| `enableTrailingStop` | true | Protect profits |
+| `PartialMode` | true | Partial close |
+
+#### Quality Controls (2 params)
+| Parameter | Recommended | Notes |
+|-----------|-------------|-------|
+| `MSSMandatory` | true | Require MSS |
+| `inpHistoricalScanBars` | 30 | Startup scan |
+
+**Parameters to REMOVE (overkill):**
+- All 2nd/3rd TP levels (fibo2ndTP, fibo3rdTP)
+- Multiple fib levels for same purpose
+- Separate min/max for same metric
+- Duplicate trend filters (W1, D1, H4 = pick ONE)
+- Display/UI parameters (not needed in production)
+- Kill zones (tested - no effect in backtest)
+
+### 5.4 Robustness
 
 | Change | Benefit |
 |--------|---------|
