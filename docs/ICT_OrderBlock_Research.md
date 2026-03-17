@@ -348,48 +348,123 @@ Based on the comprehensive ICT research above, here's what the current EA covers
 | Feature | Current State | Recommendation |
 |---------|---------------|----------------|
 | **PD Arrays** | Disabled by default | Test enabling with new filters |
-| **CHOCH Detection** | Not explicit | Add as trade filter |
-| **CISD Entry** | Not implemented | Add as entry mode |
+| **CHOCH Detection** | Not working properly | Needs fix or alternative approach |
 | **Implied FVG** | Not implemented | Add detection |
-| **OTE Entry** | Not implemented | Add as entry model |
-| **Double OB** | Not implemented | Add quality filter |
 | **Volume Filter** | Basic | Enhance with real volume |
 
 ### ❌ Not Implemented (Future Considerations)
 
 | Feature | Priority | Notes |
 |---------|----------|-------|
-| **Multiple Timeframe Liquidity** | Medium | Add HTF BSL/SSL confluence |
+| **HTF Liquidity (as TARGET)** | Medium | Add D1/W1 BSL/SSL as price target |
+| **Double OB** | Low | Add quality filter |
 | **Equal Highs/Lows (EQH/EQL)** | Low | Advanced liquidity detection |
 | **Order Flow Analysis** | Low | Requires tick data |
-| **Institutional Tape Reading** | Low | Complex to automate |
 
-### Specific Recommendations
+---
 
-1. **Enable PD Arrays Testing**
-   - Currently disabled (remove more winners than losers)
-   - Consider with tighter filters
-   - Test on XAUUSD specifically
+## Expanded Concepts Explained
 
-2. **Add CISD Entry Mode**
-   - High-probability retest entry
-   - Already has MSS detection foundation
-   - Would add another entry confirmation
+### Double Order Block (Double OB)
 
-3. **Add CHOCH as Filter**
-   - Early warning of trend change
-   - Could reduce false signals
-   - More conservative than MSS alone
+**Definition**: Two or more Order Blocks stacked together within close proximity (typically 20-50 pips), creating a **stronger support/resistance zone**.
 
-4. **Volume Enhancement**
-   - Current filter is basic
-   - Consider adding real volume analysis
-   - Institutional activity often shows in volume
+**Why It Works**:
+- Multiple institutional orders at similar levels = stronger reaction
+- Shows "accumulation" or "distribution" at that price
+- More likely to hold than a single OB
 
-5. **Add OTE Entry Model**
-   - Fibonacci 0.618 entry
-   - Different from current 0.50 entry
-   - Could improve win rate
+**Visual**:
+```
+Price
+  │
+  │    ┌─────────────┐  OB #2 (newer)
+  │    │  Bullish OB │
+  │    └─────────────┘
+  │    ┌─────────────┐  OB #1 (older)
+  │    │  Bullish OB │
+  │    └─────────────┘
+  └────────────────────
+```
+
+**Trading with Double OB**:
+- Enter when price reaches either OB zone
+- Larger position size (higher confidence)
+- Wider stop loss (both OBs must break)
+
+**EA Implementation**:
+- Add filter: check if another OB exists within X pips
+- Increase stars for Double OB (quality boost)
+- Optionally increase lot size
+
+---
+
+### Implied Fair Value Gap (IFVG)
+
+**Definition**: An FVG that's "hidden" within a single candle's body, created when the market gaps but then closes within the previous candle's range.
+
+**vs Regular FVG**:
+| Aspect | Regular FVG | Implied FVG |
+|--------|-------------|-------------|
+| Candles | 3 distinct candles | 1 candle contains it |
+| Visual | Clear gap visible | Hidden in body |
+| Detection | Wick overlap check | Body overlap check |
+| Frequency | Common | Rare |
+
+**Identification Rules**:
+1. Candle 2's body is INSIDE Candle 1's body
+2. Candle 3's body doesn't overlap Candle 1's wicks
+3. Creates "hidden" imbalance that price may still fill
+
+**EA Implementation**:
+- Add IFVG detection function
+- Check body overlap (not just wick)
+- Treat same as regular FVG for entry confirmation
+
+---
+
+### HTF Liquidity as Trade TARGET
+
+**Definition**: Using liquidity zones (BSL/SSL) from higher timeframes (D1, W1, MN) as **price targets** for OB trades.
+
+**Key Distinction**:
+- **Current**: Liquidity sweep required BEFORE OB forms (MSS confirmation = ENTRY trigger)
+- **HTF Liquidity**: D1/W1 swing highs/lows as **WHERE PRICE WILL GO** after entry = TARGET
+
+**Why Use as Target**:
+1. Institutions operate on multiple timeframes
+2. D1/W1 liquidity sweeps are more significant than M15
+3. Better risk:reward - know exit point in advance
+
+**HTF Liquidity Target Flow**:
+| Scenario | Entry | HTF Target |
+|----------|-------|-------------|
+| Bullish OB | Enter at OB | Target = D1 SSL (below entry) |
+| Bearish OB | Enter at OB | Target = D1 BSL (above entry) |
+
+**EA Implementation**:
+1. Add function to detect D1/W1 swing highs/lows
+2. Store HTF BSL/SSL levels in OB struct
+3. Use HTF level as additional TP target or invalidation
+4. Add filter: reject trades where HTF target is too close
+
+---
+
+## EA Feature Status (Corrected)
+
+Based on your feedback:
+
+| Feature | Status | Input Parameter |
+|---------|--------|-----------------|
+| **CISD Entry** | ✅ Already exists | `inpEntryMode = ENUM_EM_CISD` |
+| **OTE / Fibonacci Entry** | ✅ Already exists | `fiboEntry` (default 0.65, between 0.618-0.786) |
+| **PD Arrays** | ⚠️ Disabled | `enableDPICT = true` to enable |
+| **CHOCH** | ❌ Not working | Needs debugging |
+| **Double OB** | ❌ Not implemented | Could add as quality filter |
+| **Implied FVG** | ❌ Not implemented | Different detection logic |
+| **HTF Liquidity** | ❌ Not implemented | Could use as TARGET |
+
+---
 
 ### Research Sources
 
