@@ -1,60 +1,68 @@
-# Optimization Results - Trade Frequency Testing
+# Complete Optimization Results
 
-## Test Results Summary
+## Summary of All Tests
 
-| Test | Trades | Completed | Win Rate | PF | Balance | Notes |
-|------|--------|-----------|----------|-----|---------|-------|
-| **BASELINE** | 33 | 27 | 78% | 2.02 | $20,466 | Current settings |
-| 1_lowQuality_ON | 33 | 27 | 78% | 2.02 | $20,466 | No change - feature may need other conditions |
-| 2_noD1trend | 33 | 27 | 78% | 2.02 | $20,466 | D1 trend filter not limiting |
-| 3_noMSS_FVG | 33 | 29 | 72% | 1.46 | $14,925 | More trades but worse PF |
-| 4_reentry | 33 | 37 | 70% | 1.00 | $14,925 | +10 trades but breakeven |
-| 5_smallBody | 33 | 27 | 78% | 2.02 | $20,466 | Body size not limiting |
-| 6_dailyBias | 33 | 27 | 78% | 2.02 | $20,466 | Not active |
-| 7_outdated40 | 33 | 20 | 75% | 0.74 | $20,466 | Fewer trades - worse! |
-| 8_outdated120 | 34 | 28 | 72% | 1.61 | $17,616 | Slightly more trades |
-| C1_noMSS_reentry | 44 | 40 | 68% | 1.21 | $13,856 | Most trades but low PF |
-| C2_noMSS_outdated120 | 35 | 31 | 69% | 1.25 | $13,024 | |
-| C3_relaxed_all | 35 | 42 | 65% | 1.11 | $13,024 | |
-| KZ_London_8_17 | 33 | 27 | 78% | 2.02 | $20,466 | No change |
-| KZ_NY_13_23 | 33 | 27 | 78% | 2.02 | $20,466 | No change |
-| KZ_disabled | 33 | 27 | 78% | 2.02 | $20,466 | No change |
+### Phase 1: Quality/Trade Filters (No Impact)
+These parameters had NO effect on results:
+- `inpLowQualityTrades`
+- `inpRequireD1Trend`
+- `minBodySize`
+- `inpDailyBiasEnabled`
+- Kill Zone settings
+- `typeOfTrade` (BUY/SELL/BOTH)
+- ADX parameters
+- Spread filters
 
-## Key Findings
+### Phase 2: Entry/SL/TP Parameters (MAJOR IMPACT)
 
-### 1. Parameters That DON'T Affect Results
-- `inpLowQualityTrades` - Feature may need other conditions to trigger
-- `inpRequireD1Trend` - Already aligned with market direction
-- `minBodySize` - Current value (10) not limiting
-- `inpDailyBiasEnabled` - Not active in current config
-- Kill Zone settings - Already optimal
+| Test | Trades | Win Rate | PF | Balance | Notes |
+|------|--------|----------|-----|---------|-------|
+| **Baseline** | 18 | 78% | 2.66 | $19,121 | Default settings |
+| fiboEntry=0.618 | 26 | 78% | 2.66 | $19,120 | More trades |
+| fibo1rstTP=1.618 | 26 | 78% | 2.66 | $19,120 | Same |
+| **entry=AUTO** | 13 | 92% | 7.01 | $17,402 | BEST PF but few trades |
+| **entry=CISD** | 13 | 92% | 6.75 | $17,100 | Similar to AUTO |
+| trailing=OFF | 33 | 67% | 1.90 | $28,369 | MORE trades, WORSE PF |
+| minRR=1.5 | 25 | 79% | 3.64 | $18,293 | Better PF |
+| minRR=3.0 | 18 | 50% | 1.33 | $10,091 | Too strict |
 
-### 2. Parameters That INCREASE Trades But REDUCE PF
-- `inpMSSRequireFVG=false` - +2 to +11 trades, PF drops from 2.02 to 1.46
-- `inpAllowMitigatedReentry=true` - +10 trades, PF drops to 1.0 (breakeven)
+### Best Configurations Found
 
-### 3. Parameters That REDUCE Trades
-- `outdatedOB=40` - Reduces to 20 trades, PF drops to 0.74
+1. **Best Overall** (balanced):
+   - `fiboEntry=0.618`
+   - `fibo1rstTP=1.618`
+   - 26 trades, 78% win, PF 2.66, $19,120
 
-## Conclusion
+2. **Best Profit Factor** (conservative):
+   - `inpEntryMode=AUTO` (or CISD)
+   - 13 trades, 92% win, PF 7.01, $17,402
 
-**The current baseline settings (PF 2.02, 27 trades, 78% win) represent the OPTIMAL balance.**
+3. **Best Balance** (aggressive):
+   - `enableTrailingStop=false`
+   - 33 trades, 67% win, PF 1.90, $28,369
 
-Finding more trades always comes at the cost of lower profit factor. The quality filters (MSS, FVG, sweep) are essential for maintaining profitability.
+### Key Insights
 
-## Recommendations
+1. **fiboEntry=0.618** increases trades (26 vs 18) by entering at 61.8% instead of 65%
+2. **entry=AUTO** gives highest win rate (92%) but only 13 trades
+3. **Trailing stop OFF** gives highest balance but worse PF (1.90)
+4. **minRR filter** improves PF but reduces trades significantly
 
-1. **Keep current baseline** - It's the best balance
-2. **If more trades needed**: Accept PF ~1.2-1.5 by enabling:
-   - `inpMSSRequireFVG=false`
-   - `inpAllowMitigatedReentry=true`
-3. **For higher PF**: Could try stricter settings (outdatedOB=40) but results are worse
+### Recommended Settings
 
-## Why So Few Trades?
+**For maximum profit factor (conservative):**
+```
+inpEntryMode = ENUM_EM_AUTO (1)
+```
 
-Analysis shows:
-- Total OBs detected: 3,679
-- First confirmation (valid OB): 2,309 (63%)
-- Traded: 33 (0.9% of total, 1.4% of valid)
+**For balanced (recommended):**
+```
+fiboEntry = 0.618
+fibo1rstTP = 1.618
+```
 
-The main bottleneck is the **MSS (Market Structure Shift)** requirement - only ~3-5 OBs pass MSS per year. This is by design for quality.
+**For maximum balance (aggressive):**
+```
+enableTrailingStop = false
+fiboEntry = 0.618
+```
