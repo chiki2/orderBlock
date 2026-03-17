@@ -480,3 +480,58 @@ Based on your feedback:
 
 *Document compiled: March 2026*
 *Version: 1.0*
+
+
+---
+
+## Order Flow & CVD Research (Added March 2026)
+
+### The Problem: No Real Volume Data in MT5 Forex
+
+**Key Finding**: MetaTrader 5 does NOT provide real volume data (bid/ask) for forex pairs like XAUUSD. It only provides **tick volume** (number of price updates), which shows activity but NOT direction.
+
+### Available Solutions
+
+| Solution | Type | Availability | Notes |
+|----------|------|--------------|-------|
+| **Tick Volume** | Activity | Built-in | Shows quantity only, not direction |
+| **VSA (Volume Spread Analysis)** | Pattern | Custom indicators | Analyzes volume + spread patterns |
+| **ClusterDelta** | Real volume | Paid service | Works for futures, NOT forex |
+| **Third-party indicators** | Delta/CVD | Paid/MQL5 | Require special data feeds |
+
+### VSA - The Best Alternative for Forex
+
+**Volume Spread Analysis (VSA)** works without real volume data:
+
+| Pattern | Volume | Spread | Interpretation |
+|---------|--------|--------|----------------|
+| **High Volume + Narrow Spread** | High | Low | Accumulation (institutions buying) |
+| **High Volume + Wide Spread** | High | High | Distribution (institutions selling) |
+| **Low Volume + Wide Spread** | Low | High | Weakness (no conviction) |
+| **Low Volume + Narrow Spread** | Low | Low | Quiet market |
+
+### Current EA vs Order Flow
+
+The EA already uses concepts similar to VSA:
+
+| VSA Concept | EA Equivalent |
+|-------------|---------------|
+| Volume analysis | `inpVolumeFilter` (basic) |
+| Momentum confirmation | ADX threshold |
+| Trend confirmation | MSS/Liquidity sweep |
+| Strength confirmation | Top Impulse |
+
+### Recommendation
+
+**For XAUUSD**: The current approach using price action (OB, FVG, MSS) is MORE RELIABLE than trying to use fake volume data. The existing ADX and momentum checks serve a similar purpose to CVD confirmation.
+
+**If you want to add VSA**:
+1. Create a simple VSA indicator analyzing spread vs volume
+2. Add as pre-entry filter
+3. Only works as confirmation, not standalone signal
+
+### Sources
+- GrandAlgo: Cumulative Volume Delta Explained
+- LuxAlgo: CVD Explained
+- MQL5 Market: VSA Volume, Volume Footprint Analysis
+

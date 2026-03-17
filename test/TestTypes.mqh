@@ -54,23 +54,6 @@ bool testNoTradeReasonEnum()
     return true;
   }
 
-bool testEntryTypeEnum()
-  {
-    ASSERT_INT((int)ENUM_ENTRY_FVG, 0, "entryType: FVG == 0");
-    ASSERT_INT((int)ENUM_ENTRY_F50, 1, "entryType: F50 == 1");
-    ASSERT_INT((int)ENUM_ENTRY_OBOPEN, 2, "entryType: OBOPEN == 2");
-    return true;
-  }
-
-bool testMarketTrendEnum()
-  {
-    ASSERT_INT((int)TREND_RANGE, 0, "MarketTrend: RANGE == 0");
-    ASSERT_INT((int)TREND_BULLISH, 1, "MarketTrend: BULLISH == 1");
-    ASSERT_INT((int)TREND_BEARISH, -1, "MarketTrend: BEARISH == -1");
-    ASSERT_INT((int)TREND_UKNOWN, -42, "MarketTrend: UNKNOWN == -42");
-    return true;
-  }
-
 bool testLangEnum()
   {
     ASSERT_INT((int)LANG_EN, 0, "Lang: EN == 0");

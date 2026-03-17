@@ -13,13 +13,14 @@
 bool testIsIndexValid()
   {
     orderBlock arr[];
+    cOrderBlock ob;
     ArrayResize(arr, 5);
     
-    ASSERT_BOOL(cOrderBlock::IsIndexValid(0, arr), true, "IsIndexValid: index 0 valid");
-    ASSERT_BOOL(cOrderBlock::IsIndexValid(4, arr), true, "IsIndexValid: index 4 valid");
-    ASSERT_BOOL(cOrderBlock::IsIndexValid(-1, arr), false, "IsIndexValid: negative invalid");
-    ASSERT_BOOL(cOrderBlock::IsIndexValid(5, arr), false, "IsIndexValid: out of bounds");
-    ASSERT_BOOL(cOrderBlock::IsIndexValid(10, arr), false, "IsIndexValid: far out of bounds");
+    ASSERT_BOOL(ob.IsIndexValid(0, arr), true, "IsIndexValid: index 0 valid");
+    ASSERT_BOOL(ob.IsIndexValid(4, arr), true, "IsIndexValid: index 4 valid");
+    ASSERT_BOOL(ob.IsIndexValid(-1, arr), false, "IsIndexValid: negative invalid");
+    ASSERT_BOOL(ob.IsIndexValid(5, arr), false, "IsIndexValid: out of bounds");
+    ASSERT_BOOL(ob.IsIndexValid(10, arr), false, "IsIndexValid: far out of bounds");
     
     return true;
   }

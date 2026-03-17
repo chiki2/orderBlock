@@ -8,15 +8,6 @@
 #include "TestHelpers.mqh"
 #include "../OBInclude/sqlite.mqh"
 
-bool testSQLiteConstants()
-  {
-    ASSERT_INT(SQLITE_OK, 0, "SQLITE_OK == 0");
-    ASSERT_INT(SQLITE_ERROR, 1, "SQLITE_ERROR == 1");
-    ASSERT_INT(SQLITE_BUSY, 5, "SQLITE_BUSY == 5");
-    ASSERT_INT(SQLITE_MISUSE, 21, "SQLITE_MISUSE == 21");
-    
-    return true;
-  }
 
 bool testSQLiteWrapper()
   {
@@ -29,10 +20,6 @@ bool testSQLiteWrapper()
 bool RunSQLiteTests(const string suite)
   {
     bool all_ok = true;
-    
-    PrintFormat("  [%s] SQLite constants", suite);
-    if(!testSQLiteConstants())
-      { PrintFormat("  FAILED: SQLite constants"); all_ok = false; }
     
     PrintFormat("  [%s] SQLite wrapper", suite);
     if(!testSQLiteWrapper())

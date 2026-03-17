@@ -195,6 +195,51 @@
       "path":"OBInclude\\openclKernels.mqh",
       "compile":false,
       "relative_to_project":true
+    },
+    {
+      "path":"test\\TestOrderBlock2.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"test\\TestTypes.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"test\\TestGlobals.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"test\\TestDrawOB.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"test\\TestExportOB.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"test\\TestAltStrat.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"OBInclude\\altStrat.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"test\\TestSQLite.mqh",
+      "compile":false,
+      "relative_to_project":true
+    },
+    {
+      "path":"test\\TestDiagnosticPanel.mqh",
+      "compile":false,
+      "relative_to_project":true
     }
   ],
 

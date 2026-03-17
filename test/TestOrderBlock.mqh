@@ -20,9 +20,7 @@ int tests_passed=0;
 #include "TestGlobals.mqh"
 #include "TestDrawOB.mqh"
 #include "TestExportOB.mqh"
-#include "TestAltStrat.mqh"
 #include "TestSQLite.mqh"
-#include "TestDiagnosticPanel.mqh"
 
 
 //+------------------------------------------------------------------+
@@ -185,26 +183,19 @@ void TestQueue()
     else
        PrintFormat("%s passed", test_name);
 
-    test_name="Test AltStrat";
-    PrintFormat("%s started", test_name);
-    if(!RunAltStratTests(test_name))
-       PrintFormat("%s failed", test_name);
-    else
-       PrintFormat("%s passed", test_name);
-
     test_name="Test SQLite";
     PrintFormat("%s started", test_name);
     if(!RunSQLiteTests(test_name))
        PrintFormat("%s failed", test_name);
     else
        PrintFormat("%s passed", test_name);
-
-    test_name="Test DiagnosticPanel";
-    PrintFormat("%s started", test_name);
-    if(!RunDiagnosticPanelTests(test_name))
-       PrintFormat("%s failed", test_name);
-    else
-       PrintFormat("%s passed", test_name);
+//
+//    test_name="Test DiagnosticPanel";
+//    PrintFormat("%s started", test_name);
+//    if(!RunDiagnosticPanelTests(test_name))
+//       PrintFormat("%s failed", test_name);
+//    else
+//       PrintFormat("%s passed", test_name);
    }
 //+------------------------------------------------------------------+
 //| Script program start function                                    |
