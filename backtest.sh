@@ -186,7 +186,7 @@ TODAY=$(date +%Y%m%d)
 
 # Launch MT5 in portable mode — runs the strategy tester in-process,
 # so this single wine process covers the entire backtest lifetime
-WINEPREFIX="$WINEPREFIX" "$WINE"  "/min $MT5_EXE" /portable "/config:$CONFIG_WIN" \
+WINEPREFIX="$WINEPREFIX" "$WINE" "$MT5_EXE" /portable "/config:$CONFIG_WIN" \
   > /tmp/mt5_wine.log 2>&1 &
 MT5_PID=$!
 echo "  MT5 launched (pid $MT5_PID) — running test..."
