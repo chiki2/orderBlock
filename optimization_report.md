@@ -95,3 +95,25 @@ The **single most impactful change** is disabling the trailing stop. This dramat
 The partial close feature rarely triggers because the trailing stop closes positions before they reach TP levels.
 
 **Recommendation: Set `enableTrailingStop = false` as the default setting.**
+
+## Final Test Results (2026-03-18)
+
+| Config | Trades | Win Rate | PF | Sharpe | Recovery | Max DD |
+|--------|--------|----------|-----|--------|---------|--------|
+| Baseline (trailing ON) | 37 | 61% | 1.05 | 1.56 | 0.12 | 47.13% |
+| **trailing=OFF** | 37 | 47% | 1.33 | 6.98 | 0.69 | 51.47% |
+| **trailing=OFF + entry=AUTO** | 21 | 60% | **2.24** | **8.33** | **1.42** | 40.48% |
+| **trailing=OFF + risk=2** | 10 | 60% | **2.27** | 2.81 | 1.12 | **35.10%** |
+| trailing=OFF + early BE | 37 | 44% | 1.25 | 5.26 | 0.47 | 51.57% |
+| trailing=OFF + LIMIT | 36 | 47% | 1.39 | 8.07 | 0.78 | 51.59% |
+
+### Settings That Have No Effect:
+- `PartialMode` - Never triggers (price doesn't linger at expansion levels)
+- `inpEarlyBreakEven` - Slightly worse performance
+- `typeofOrder` - LIMIT vs STOP similar results
+
+### Best Overall:
+**trailing=OFF + entry=AUTO** - Best Sharpe (8.33) and Recovery (1.42)
+
+### Best Max Drawdown:
+**trailing=OFF + risk=2** - Lowest Max DD (35.10%) but fewest trades (10)
