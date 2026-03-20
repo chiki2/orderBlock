@@ -184,6 +184,14 @@ fi
 
 START_TIME=$(date +%s)
 TODAY=$(date +%Y%m%d)
+# Count agent log lines before test — used to detect MetaTester completion
+_AGENT_LOG_PATH="$MT5_DIR/Tester/Agent-127.0.0.1-3000/logs/${TODAY}.log"
+PRE_AGENT_LINES=$(python3 -c "
+import codecs, sys
+try:
+    with codecs.open(sys.argv[1], 'r', 'utf-16') as f: print(len(f.readlines()))
+except: print(0)
+" "$_AGENT_LOG_PATH" 2>/dev/null || echo 0)
 
 # Launch MT5 in portable mode — runs the strategy tester in-process,
 # so this single wine process covers the entire backtest lifetime
@@ -200,6 +208,32 @@ while kill -0 "$MT5_PID" 2>/dev/null; do
 done
 wait "$MT5_PID" 2>/dev/null || true
 sleep 1  # allow final log flush
+
+# ── Wait for MetaTester agent to complete ──────────────────────────────────
+# The main terminal (ShutdownTerminal=1) exits in ~3s. The MetaTester agent
+# process runs independently for the full backtest duration. Poll its log
+# until 'thread finished' appears after the lines we recorded pre-test.
+if [[ -f "$_AGENT_LOG_PATH" || $PRE_AGENT_LINES -eq 0 ]]; then
+  echo "  Main terminal exited — waiting for MetaTester agent..."
+  AGENT_TIMEOUT=600
+  while [[ $(( $(date +%s) - START_TIME )) -lt $AGENT_TIMEOUT ]]; do
+    DONE=$(python3 -c "
+import codecs, sys
+try:
+    with codecs.open(sys.argv[1], 'r', 'utf-16') as f:
+        lines = f.readlines()
+    new_lines = lines[int(sys.argv[2]):]
+    print(1 if any('thread finished' in l for l in new_lines) else 0)
+except:
+    print(0)
+" "$_AGENT_LOG_PATH" "$PRE_AGENT_LINES" 2>/dev/null || echo 0)
+    [[ "$DONE" == "1" ]] && break
+    ELAPSED=$(( $(date +%s) - START_TIME ))
+    printf "  MetaTester running... %ds elapsed\r" "$ELAPSED"
+    sleep 3
+  done
+  echo ""
+fi
 
 END_TIME=$(date +%s)
 WALL_TIME=$(( END_TIME - START_TIME ))
