@@ -180,14 +180,30 @@ The set file is resolved from `OBInclude/SetFiles/$SET_FILE` and copied to the M
 | Set file | claude.set |
 | Commit | 0b30fe9 |
 
-### NAS100 — Initial Test (2022-2026)
+### NAS100 — Run 1 (2022-2026, MacroTrend=false, RiskProfile=Aggressive)
+**Status: Aborted** — main terminal exited before MetaTester finished (race condition in backtest.sh).
+Parser picked up stale UltraScalp results. Real results captured from agent log: 9 trades, 2 wins, 7 losses (all losses = counter-trend sells into 2023-2024 bull run). **backtest.sh race condition fixed** (now polls MetaTester agent log).
+
+### NAS100 — Run 2 (2022-2026, MacroTrend=true, RiskProfile=1=Aggressive)
 | Metric | Value |
 |---|---|
-| Date | TBD |
-| Trades | — |
-| Win% | — |
-| PF | — |
-| Balance | — |
-| DD% | — |
-| Set file | nas100.set |
-| Notes | First run — no prior tuning |
+| Date | 2026-03-20 |
+| Trades closed | 10 |
+| Trades placed | 47 |
+| Win% | 20% (2/10) |
+| PF | 0.13 |
+| Balance | ,934 (-0.7%) |
+| DD% | 0.73% (2) |
+| Total OBs | 14,810 |
+| No MSS | 9,160 |
+| Wall time | 361s |
+| Set file | nas100.set (MacroTrend=true, KZ=13-16+19-22) |
+| Notes | **RiskProfile=1 (Aggressive) overrides KZ and D1=false** — custom settings ignored! |
+
+**Critical finding**:  hardcodes  and , overriding the set file's , , . EA started with .
+
+### NAS100 — Run 3 (2022-2026, inpRiskProfile=0=Custom, all individual settings active)
+**Status: Running** (2026-03-20)
+Expected: KZ=13-16+19-22, D1=true, MacroTrend=true to properly apply.
+
+### NAS100 — TBD
