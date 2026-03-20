@@ -202,8 +202,26 @@ Parser picked up stale UltraScalp results. Real results captured from agent log:
 
 **Critical finding**:  hardcodes  and , overriding the set file's , , . EA started with .
 
-### NAS100 — Run 3 (2022-2026, inpRiskProfile=0=Custom, all individual settings active)
+### NAS100 — Run 3 (2022-2026, inpRiskProfile=0=Very Aggressive)
+| Metric | Value |
+|---|---|
+| Date | 2026-03-20 |
+| Trades closed | 14 |
+| Trades placed | 73 |
+| Win% | 21% (3/14) |
+| PF | 0.32 |
+| Balance | $9,917 (-0.8%) |
+| DD% | 1.09% |
+| Total OBs | 21,933 |
+| No MSS | 13,491 |
+| Notes | **inpRiskProfile=0 = Very Aggressive** (KZ=off, all filters off), not Custom. More OBs than run 2 because zero filtering. |
+
+**ENUM_RISK_PROFILE discovered** (types.mqh):
+
+nas100.set must use **inpRiskProfile=5** to apply custom KZ=13-16+19-22, D1=true, MacroTrend=true.
+
+### NAS100 — Run 4 (2022-2026, inpRiskProfile=5=PROFILE_CUSTOM — correct settings)
 **Status: Running** (2026-03-20)
-Expected: KZ=13-16+19-22, D1=true, MacroTrend=true to properly apply.
+Expected: KZ=13-16+19-22 UTC, D1=true, MacroTrend=true — all individual settings active.
 
 ### NAS100 — TBD
