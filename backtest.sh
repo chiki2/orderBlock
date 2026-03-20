@@ -25,7 +25,8 @@ EA_EX5="$MT5_DIR/MQL5/Experts/orderBlock/OrderBlock.ex5"
 CONFIG_PATH="$MT5_ROOT/drive_c/MT5_backtest.ini"
 CONFIG_WIN='C:\MT5_backtest.ini'
 # ExpertParameters must be just the filename — MT5 looks in MQL5\Profiles\Tester\
-SET_FILE_NAME='claude.set'
+# Override with: SET_FILE=nas100.set bash backtest.sh
+SET_FILE_NAME="${SET_FILE:-claude.set}"
 SET_FILE_PRESETS="$MT5_DIR/MQL5/Profiles/Tester/$SET_FILE_NAME"
 
 LAST_JSON="$SCRIPT_DIR/backtest_last.json"
@@ -151,7 +152,7 @@ echo "  Deposit: $DEPOSIT USD  Leverage: 1:$LEVERAGE"
 REPORT_FILE="$MT5_DIR/${REPORT}.htm"
 
 # Copy set file to MQL5\presets\ — ExpertParameters must be relative filename in that dir
-SET_FILE_LINUX="$MT5_DIR/MQL5/Experts/orderBlock/OBInclude/SetFiles/claude.set"
+SET_FILE_LINUX="$MT5_DIR/MQL5/Experts/orderBlock/OBInclude/SetFiles/$SET_FILE_NAME"
 echo "  Copying claude.set → MQL5/presets/$SET_FILE_NAME"
 cp "$SET_FILE_LINUX" "$SET_FILE_PRESETS"
 
