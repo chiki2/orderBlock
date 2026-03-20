@@ -220,8 +220,52 @@ Parser picked up stale UltraScalp results. Real results captured from agent log:
 
 nas100.set must use **inpRiskProfile=5** to apply custom KZ=13-16+19-22, D1=true, MacroTrend=true.
 
-### NAS100 — Run 4 (2022-2026, inpRiskProfile=5=PROFILE_CUSTOM — correct settings)
-**Status: Running** (2026-03-20)
-Expected: KZ=13-16+19-22 UTC, D1=true, MacroTrend=true — all individual settings active.
+### NAS100 — Run 4 (2022-2026, PROFILE_CUSTOM, STOP orders)
+| Metric | Value |
+|---|---|
+| Date | 2026-03-20 |
+| Trades closed | 3 |
+| Trades placed | 22 |
+| Fill rate | 14% |
+| Win% | 33% (1/3) |
+| PF | 0.53 |
+| Balance | $9,993 (-0.07%) |
+| DD% | 0.15% |
+| Total OBs | 7,059 |
+| Settings | Profile=5, KZ=13-16+19-22, D1=true, MacroTrend=true, STOP orders |
+| Notes | First clean run with all custom settings applied. STOP fill rate too low (14%). |
 
-### NAS100 — TBD
+### NAS100 — Run 5 (2022-2026, PROFILE_CUSTOM, LIMIT orders) — Current Best
+| Metric | Value |
+|---|---|
+| Date | 2026-03-20 |
+| Trades closed | 9 |
+| Trades placed | 21 |
+| Fill rate | 43% |
+| Win% | 33% (3/9) |
+| PF | **1.03** |
+| Balance | $10,002 (+0.02%) |
+| DD% | 0.45% |
+| Total OBs | 7,057 |
+| Wall time | 251s |
+| Settings | Profile=5, KZ=13-16+19-22, D1=true, MacroTrend=true, LIMIT orders |
+| Notes | LIMIT orders 3x better fill rate. PF crosses 1.0 — breakeven baseline. |
+
+**Key finding**: LIMIT orders (typeofOrder=1) are essential for NAS100. STOP orders have 14% fill rate vs LIMIT 43% — NAS100 does retrace into OBs at the 61.8% fib level before continuing.
+
+### NAS100 — Next Steps
+
+**Why PF is only 1.03 (not like XAUUSD 3.84):**
+1. **Sample size**: 9 trades in 4 years — too few for statistical confidence
+2. **MSS lookback**: Hardcoded at 20 bars (XAUUSD-tuned). NAS100 may need different lookback
+3. **SL width**: SWEEP SL mode (OB width as SL) may be too narrow for NAS100 volatility
+4. **No instrument-specific tuning**: All quality thresholds (minBodySize=10, tolerance=50) are XAUUSD defaults
+
+**Recommended next experiments:**
+1. Increase  (80→120) — NAS100 OBs may stay valid longer in trending markets
+2. Try  — see if FVG quality filter improves win rate despite fewer trades
+3. Consider adding London open KZ (08-10 UTC) — NAS100 also moves at London open
+4. Run optimization on KZ windows (KZ1 start/end) specific to NAS100 session behavior
+
+**NAS100 Status: BASELINE ESTABLISHED — PF 1.03, needs optimization**
+Not yet ready for live deployment. Requires tuning session from scratch on NAS100-specific parameters.
