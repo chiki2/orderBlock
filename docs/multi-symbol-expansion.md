@@ -137,15 +137,19 @@ The set file is resolved from `OBInclude/SetFiles/$SET_FILE` and copied to the M
 
 ## Expansion Roadmap
 
-### Phase 1 — NAS100 (current)
+### Phase 1 — NAS100 ✅ COMPLETE
 - [x] Create `nas100.set` with NY session kill zones
 - [x] Add `SET_FILE` env support to `backtest.sh`
-- [ ] Run initial 2022-2026 backtest
-- [ ] Compare funnel metrics (totalOB, fc_mss, fc_sweep) vs XAUUSD
-- [ ] Tune parameters if needed (ATR scaling, MSS lookback, KZ windows)
+- [x] Run initial 2022-2026 backtest (5 runs to find clean config)
+- [x] 26-case overnight parameter sweep
+- [x] Cross-year validation (5 windows)
+- **Best config**: `nas100_best.set` — outdatedOB=120 + tol=80 + fibo1rstTP=2.0 → **PF 2.95**
+- **Status**: Needs more trades for statistical confidence (9 trades / 4yr)
 
-### Phase 2 — EURUSD
-- Create `eurusd.set`: London KZ (08-12 UTC), consider STOP orders, `inpMSSRequireFVG` test
+### Phase 2 — EURUSD (current)
+- [x] Create `eurusd.set`: London KZ (08-12 UTC) + NY (13-16 UTC), LIMIT orders
+- [x] `eurusd_optimize.py`: 24-case sweep running now
+- [ ] Validate winner across year windows
 - Key watch: `tolerance` and `minBodySize` (EURUSD moves in pips, different scale)
 
 ### Phase 3 — GBPUSD
@@ -267,5 +271,61 @@ nas100.set must use **inpRiskProfile=5** to apply custom KZ=13-16+19-22, D1=true
 3. Consider adding London open KZ (08-10 UTC) — NAS100 also moves at London open
 4. Run optimization on KZ windows (KZ1 start/end) specific to NAS100 session behavior
 
-**NAS100 Status: BASELINE ESTABLISHED — PF 1.03, needs optimization**
-Not yet ready for live deployment. Requires tuning session from scratch on NAS100-specific parameters.
+**NAS100 Status: OPTIMIZED — PF 2.95, needs more sample size**
+Not yet ready for live deployment. 9 trades/4yr insufficient for statistical confidence.
+
+---
+
+## NAS100 — Overnight Sweep Results (2026-03-20/21, 26 runs)
+
+| # | Config | PF | WR | Balance | DD% |
+|---|---|---|---|---|---|
+| 1 | Baseline | 2.25 | 4/9 (44%) | $10,002 | 0.34% |
+| 13 | fibo1rstTP=3.0 | 2.43 | 2/9 (22%) | $10,074 | 0.31% |
+| 23 | D1Trend=false | 2.40 | 5/11 (45%) | $10,075 | 0.34% |
+| **26** | **outdatedOB=120 + tol=80 + tp=2.0** | **2.95** | **4/9 (44%)** | **$10,085** | **0.34%** |
+
+**Key findings:**
+- KZ 13-16+19-22 is optimal — London KZ (08-11) kills edge (PF 0.54)
+- TP ratio dominant lever: fibo1rstTP 2.0→3.0 = PF 1.57→2.43
+- tolerance (30/80/120) and minBodySize flat — not a lever at this sample size
+- D1Trend=false adds trades (+45% WR) worth revisiting with larger sample
+- Best saved: `OBInclude/SetFiles/nas100_best.set`
+
+---
+
+## EURUSD — Expansion #2
+
+### Why EURUSD Second
+
+- Highest FX liquidity worldwide — tightest spreads, deepest institutional participation
+- London session (08-12 UTC) is EURUSD's primary driver — maps to KZ1
+- NY open (13-16 UTC) adds secondary volatility — maps to KZ2
+- Clean MSS structure: EURUSD has clear swing highs/lows respected by institutions
+- ICT community: EURUSD widely used for OB/MSS strategies alongside Gold
+
+### Parameter Adaptations vs XAUUSD
+
+| Parameter | XAUUSD (claude.set) | EURUSD (eurusd.set) | Reason |
+|---|---|---|---|
+| `inpKillZoneEnabled` | false | **true** | Asian session noise for FX |
+| `inpKZ1Start/End` | 13-17 | **08-12** | London open = primary EURUSD driver |
+| `inpKZ2Start/End` | 13-23 | **13-16** | NY open secondary session |
+| `inpMaxSpread` | 0 | **3 pts** | EURUSD can widen at news |
+| `typeofOrder` | STOP | **LIMIT** | Test both — FX retracements common |
+| `uniqueMagicNumber` | 1234555 | **1234577** | Avoid conflicts |
+| `Npair` | USD | **USD** | EURUSD is USD-quoted |
+
+### EURUSD Kill Zone Logic
+
+```
+UTC  00  01  02  03  04  05  06  07  08  09  10  11  12  13  14  15  16  17  18  19
+          [Asia ─────────────────────────────────────────] [London─────────] [NY open─]
+                                                           ████████████████  ████████████
+                                                           KZ1 (08-12)       KZ2 (13-16)
+```
+
+### EURUSD Optimizer — 24 Test Cases
+
+Covers: KZ windows (London only, London wide, NY add, KZ off), STOP vs LIMIT, FVG filter, TP ratios (1.27/2.0/2.5/3.0), spread (0/2/3/5), outdatedOB (120/160), tolerance (20/80), minBodySize (5/20), D1/MacroTrend off, combination tests.
+
