@@ -444,7 +444,7 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
       MSSStart = lastHighTime;
       MSSLevel = lastHighLevel;
 
-      if(checkLiquiditySweepBeforeOB(lastLowTime) == false)
+      if(inpRequireSweep && checkLiquiditySweepBeforeOB(lastLowTime) == false)
         {
          trashme(ENUM_REASON_NO_MSS);
          return false;
@@ -543,7 +543,7 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
       MSSStart = lastLowTime;
       MSSLevel = lastLowLevel;
 
-      if(checkLiquiditySweepBeforeOB(lastHighTime) == false)
+      if(inpRequireSweep && checkLiquiditySweepBeforeOB(lastHighTime) == false)
         {
          trashme(ENUM_REASON_NO_MSS);
          return false;
