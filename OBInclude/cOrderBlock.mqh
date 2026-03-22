@@ -1262,6 +1262,49 @@ bool cOrderBlock::isAllGood(int i)
       if(isBear == true  &&  bullishBias) { reason = ENUM_REASON_IS_COUNTER_BULLISH;  return false; }
      }
 
+   // #57 09:00 UTC death zone â 31% win rate, London open fakeouts
+   if(inpSkip09UTC)
+     {
+      MqlDateTime gmt;
+      TimeGMT(gmt);
+      if(gmt.hour == 9)
+        {
+         reason = ENUM_REASON_DEATH_HOUR;
+         return false;
+        }
+     }
+
+   // #58 H4 inside bar filter â 46% of losses vs 10% of wins
+   if(inpSkipH4InsideBar)
+     {
+      MqlRates h4[3];
+      if(CopyRates(_Symbol, PERIOD_H4, 0, 3, h4) == 3)
+        {
+         if(h4[1].high < h4[2].high && h4[1].low > h4[2].low)
+           {
+            reason = ENUM_REASON_H4_INSIDE_BAR;
+            return false;
+           }
+        }
+     }
+
+   // #60 D1 lower wick rejection â 0.381 losses vs 0.159 wins (p=0.014)
+   if(inpD1WickFilter)
+     {
+      MqlRates d1[3];
+      if(CopyRates(_Symbol, PERIOD_D1, 0, 3, d1) == 3)
+        {
+         double d1Range = d1[1].high - d1[1].low;
+         double lowerWick = MathMin(d1[1].open, d1[1].close) - d1[1].low;
+         double wickRatio = (d1Range > 0) ? lowerWick / d1Range : 0;
+         if(wickRatio > 0.35)
+           {
+            reason = ENUM_REASON_D1_WICK_REJECTION;
+            return false;
+           }
+        }
+     }
+
    if(allChecks == true)
       return true;
 
@@ -1391,6 +1434,16 @@ bool cOrderBlock::isAllGood(int i)
         }
      }
 
+   // #56 Block counter-HTF direction: Bull+Short = 23% win rate catastrophe
+   if(inpBlockCounterHTF)
+     {
+      if(mHTFTrend == TREND_BULLISH && isBear)
+        {
+         reason = ENUM_REASON_HTF_COUNTER_BULLISH;
+         return false;
+        }
+     }
+
    // #21 Spread cap: skip entry if spread is too wide
    if(inpMaxSpread > 0 && spread > inpMaxSpread)
      {
@@ -1509,4 +1562,4 @@ bool cOrderBlock::IsIndexValid(int i, orderBlock &array[])
   {
    return i >= 0 && i < ArraySize(array);
   }
-//+------------------------------------------------------------------+
+//+------------------------------------------------------------------+
