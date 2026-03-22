@@ -252,4 +252,112 @@ void ExportOBCloseWithOutcome(int i)
    // else: CLOSED with WIN/LOSS already written by OnTradeTransaction hook
   }
 
+
+//+------------------------------------------------------------------+
+//| MTF Candle Context Export — separate CSV for multi-TF analysis    |
+//|                                                                  |
+//| Writes 3 candles x 5 timeframes at ENTRY and EXIT time.         |
+//| File: ob_candles_{Symbol}_{Period}_{YYYYMMDD}.csv                |
+//+------------------------------------------------------------------+
+int g_candleHandle = INVALID_HANDLE;
+
+string ExportCandleFilename()
+  {
+   MqlDateTime dt;
+   TimeToStruct(TimeCurrent(), dt);
+   return StringFormat("ob_candles_%s_%s_%04d%02d%02d.csv",
+                       _Symbol, EnumToString(CTOB),
+                       dt.year, dt.mon, dt.day);
+  }
+
+void ExportCandleHeader(int handle)
+  {
+   string header =
+      "ob_name,phase,outcome,"
+      "tf,tf_minutes,"
+      "c1_time,c1_open,c1_high,c1_low,c1_close,c1_body,c1_upper_wick,c1_lower_wick,c1_range,c1_bullish,"
+      "c2_time,c2_open,c2_high,c2_low,c2_close,c2_body,c2_upper_wick,c2_lower_wick,c2_range,c2_bullish,"
+      "c3_time,c3_open,c3_high,c3_low,c3_close,c3_body,c3_upper_wick,c3_lower_wick,c3_range,c3_bullish\n";
+   FileWriteString(handle, header);
+  }
+
+void ExportCandleInit()
+  {
+   string fname = ExportCandleFilename();
+   bool   isNew = !FileIsExist(fname);
+
+   g_candleHandle = FileOpen(fname,
+                             FILE_CSV | FILE_WRITE | FILE_READ | FILE_ANSI | FILE_SHARE_READ,
+                             ',');
+   if(g_candleHandle == INVALID_HANDLE)
+     {
+      PrintFormat("[ExportCandle] ERROR: cannot open '%s' (%d)", fname, GetLastError());
+      return;
+     }
+   FileSeek(g_candleHandle, 0, SEEK_END);
+   if(isNew)
+      ExportCandleHeader(g_candleHandle);
+  }
+
+void ExportCandleClose()
+  {
+   if(g_candleHandle != INVALID_HANDLE)
+     {
+      FileFlush(g_candleHandle);
+      FileClose(g_candleHandle);
+      g_candleHandle = INVALID_HANDLE;
+     }
+  }
+
+void ExportCandleRow(const string ob_name, const string phase, const string outcome,
+                     ENUM_TIMEFRAMES tf, MqlRates &rates[])
+  {
+   if(g_candleHandle == INVALID_HANDLE) return;
+   if(ArraySize(rates) < 4) return;
+
+   int tf_min = PeriodSeconds(tf) / 60;
+
+   string row = "";
+   for(int c = 0; c < 3; c++)
+     {
+      int idx = c + 1;
+      if(idx >= ArraySize(rates)) break;
+      double o = rates[idx].open;
+      double h = rates[idx].high;
+      double l = rates[idx].low;
+      double cl = rates[idx].close;
+      double body = MathAbs(cl - o);
+      double range_val = h - l;
+      double upper_wick = h - MathMax(o, cl);
+      double lower_wick = MathMin(o, cl) - l;
+      int bullish = (cl >= o) ? 1 : 0;
+
+      if(c > 0) row += ",";
+      row += StringFormat("%s,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f,%d",
+                          TimeToString(rates[idx].time, TIME_DATE | TIME_SECONDS),
+                          o, h, l, cl, body, upper_wick, lower_wick, range_val, bullish);
+     }
+
+   string prefix = StringFormat("%s,%s,%s,%s,%d,",
+                                ob_name, phase, outcome,
+                                EnumToString(tf), tf_min);
+   FileWriteString(g_candleHandle, prefix + row + "\n");
+  }
+
+void ExportCandleContext(int i, const string phase, const string outcome = "")
+  {
+   if(g_candleHandle == INVALID_HANDLE) return;
+   if(i < 0 || i >= ArraySize(obBuffer)) return;
+
+   ENUM_TIMEFRAMES tfs[] = {PERIOD_M5, PERIOD_M15, PERIOD_H1, PERIOD_H4, PERIOD_D1};
+   MqlRates buf[5];
+   string ob_name = obBuffer[i].name;
+
+   for(int t = 0; t < ArraySize(tfs); t++)
+     {
+      if(CopyRates(_Symbol, tfs[t], 0, 5, buf) >= 4)
+         ExportCandleRow(ob_name, phase, outcome, tfs[t], buf);
+     }
+  }
+
 #endif  // EXPORT_OB_MQH
