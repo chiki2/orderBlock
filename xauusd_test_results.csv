@@ -1,0 +1,18 @@
+run_id,label,profit_factor,balance,max_dd_pct,traded,total_trades,win_rate,elapsed_s
+1,"Baseline (Profile=5 Custom, all filters)",3.84,0.0,10.53% 1 308.88,0,10,"7/10 (70%)",604
+2,"Profile=0 VeryAggressive (no filters)",3.84,10253.58,10.53% 1 308.88,6,10,"51/143 (36%)",807
+3,"Profile=1 Aggressive (wide KZ, D1=off)",1.50,10075.18,65.26% 41 060.61,65,83,"38/81 (47%)",606
+4,"Profile=2 Balanced (med KZ, D1=off)",1.83,25273.03,20.81% 3 034.23,29,21,"11/20 (55%)",482
+5,"Profile=3 Conservative (tight KZ, D1=on)",3.84,23847.15,10.53% 1 308.88,15,10,"7/10 (70%)",362
+6,"Profile=4 VeryConservative (+H4)",3.78,23379.53,10.53% 1 308.88,15,9,"6/9 (67%)",377
+7,"Custom: D1Trend=false (biggest filter off)",3.84,23847.15,10.53% 1 308.88,15,10,"7/10 (70%)",363
+8,"Custom: MacroTrend=false",1.37,23847.15,33.61% 5 182.17,15,15,"7/15 (47%)",397
+9,"Custom: KZ wide (08-17 + 18-23)",2.56,0.0,28.93% 4 370.70,0,29,"19/29 (66%)",376
+10,"Custom: KZ disabled",1.26,0.0,53.01% 7 217.93,0,44,"22/45 (49%)",543
+11,"Custom: outdatedOB=160 (OBs live longer)",3.84,23847.15,10.53% 1 308.88,13,10,"7/10 (70%)",201
+12,"Custom: outdatedOB=200",3.84,23847.15,10.53% 1 308.88,13,10,"7/10 (70%)",204
+13,"Profile=2 Balanced + D1=true",1.83,25273.03,20.81% 3 034.23,29,21,"11/20 (55%)",267
+14,"KZ wide + D1=true + MacroTrend=true",1.83,25273.03,20.81% 3 034.23,29,21,"19/29 (66%)",371
+15,"D1=false + outdatedOB=160",3.84,23847.15,10.53% 1 308.88,13,10,"7/10 (70%)",204
+16,"Profile=2 + outdatedOB=160",1.83,25273.03,20.81% 3 034.23,26,21,"11/20 (55%)",295
+17,"Profile=1 + D1=true + outdatedOB=160",1.31,25273.03,71.42% 44 223.77,26,87,"38/85 (45%)",507
