@@ -1,0 +1,9 @@
+label,pf,trades,dd_pct,log
+Baseline,1.63,39,1.97,7 expired
+tol=60,1.59,40,1.94,7 expired
+tol=80,1.47,44,2.35,7 expired
+tol=100,1.47,47,2.36,8 expired
+tp=2.0,1.24,39,2.06,7 expired
+tp=2.0 + tol=80,1.12,44,2.99,7 expired
+No D1Trend,1.66,51,2.51,7 expired
+STOP orders,1.49,44,2.01,3 expired
