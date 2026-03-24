@@ -102,33 +102,6 @@ void cOrderBlock::addStars(int add = 1)
   }
 
 //+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-bool cOrderBlock::hasOppositeOB(bool isOpposite)
-  {
-   int distance = iBarShift(_Symbol, CTOB, startTime);
-   if(isBear != isOpposite &&
-      (isDone == false || distance > 20 || OBcolor != clrGreen) &&
-      stars >= 3)
-     {
-      Print("Opposite OrderBlock detected while trying to open a trade. Current order is done");
-      isDone = true;
-      reason = ENUM_REASON_OPPOSITE_OB;
-      stars  = 0;
-
-      if(tradeTicket != INVALID_TICKET)
-        {
-         CancelPendingIfExists(tradeTicket);
-         tradeTicket = INVALID_TICKET;
-        }
-
-      return true;
-     }
-
-   return false;
-  }
-
-//+------------------------------------------------------------------+
 //|          Check for MSS entry ( if auto mode )                    |
 //|          rules : bullish market, check the last bearish candle
 //|                  wich make an higher low and break ob impulsion
@@ -1274,36 +1247,38 @@ bool cOrderBlock::isAllGood(int i)
         }
      }
 
-   // #58 H4 inside bar filter â 46% of losses vs 10% of wins
-   if(inpSkipH4InsideBar)
-     {
-      MqlRates h4[3];
-      if(CopyRates(_Symbol, PERIOD_H4, 0, 3, h4) == 3)
-        {
-         if(h4[1].high < h4[2].high && h4[1].low > h4[2].low)
-           {
-            reason = ENUM_REASON_H4_INSIDE_BAR;
-            return false;
-           }
-        }
-     }
+    // #58 H4 inside bar filter — PERF: cached per-bar instead of per-OB
+    if(inpSkipH4InsideBar)
+      {
+       static MqlRates s_h4[3];
+       static datetime s_h4_bar = 0;
+       datetime curH4 = iTime(_Symbol, PERIOD_H4, 0);
+       if(curH4 != s_h4_bar)
+         { CopyRates(_Symbol, PERIOD_H4, 0, 3, s_h4); s_h4_bar = curH4; }
+       if(s_h4[1].high < s_h4[2].high && s_h4[1].low > s_h4[2].low)
+         {
+          reason = ENUM_REASON_H4_INSIDE_BAR;
+          return false;
+         }
+      }
 
-   // #60 D1 lower wick rejection â 0.381 losses vs 0.159 wins (p=0.014)
-   if(inpD1WickFilter)
-     {
-      MqlRates d1[3];
-      if(CopyRates(_Symbol, PERIOD_D1, 0, 3, d1) == 3)
-        {
-         double d1Range = d1[1].high - d1[1].low;
-         double lowerWick = MathMin(d1[1].open, d1[1].close) - d1[1].low;
-         double wickRatio = (d1Range > 0) ? lowerWick / d1Range : 0;
-         if(wickRatio > 0.35)
-           {
-            reason = ENUM_REASON_D1_WICK_REJECTION;
-            return false;
-           }
-        }
-     }
+    // #60 D1 lower wick rejection — PERF: cached per-bar instead of per-OB
+    if(inpD1WickFilter)
+      {
+       static MqlRates s_d1[3];
+       static datetime s_d1_bar = 0;
+       datetime curD1 = iTime(_Symbol, PERIOD_D1, 0);
+       if(curD1 != s_d1_bar)
+         { CopyRates(_Symbol, PERIOD_D1, 0, 3, s_d1); s_d1_bar = curD1; }
+       double d1Range = s_d1[1].high - s_d1[1].low;
+       double lowerWick = MathMin(s_d1[1].open, s_d1[1].close) - s_d1[1].low;
+       double wickRatio = (d1Range > 0) ? lowerWick / d1Range : 0;
+       if(wickRatio > 0.35)
+         {
+          reason = ENUM_REASON_D1_WICK_REJECTION;
+          return false;
+         }
+      }
 
    if(allChecks == true)
       return true;
