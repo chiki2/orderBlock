@@ -174,66 +174,65 @@ ReplaceReport=1
 ShutdownTerminal=1
 EOF
 
-# Kill any existing MT5 instance — a running terminal hands off the config
-# to itself and exits immediately, so we must start fresh
-if pgrep -f "terminal64" > /dev/null 2>&1; then
-  yellow "  Killing existing MT5 instance..."
-  pkill -f "terminal64" 2>/dev/null || true
-  sleep 3   # let it write its state before dying
-fi
+# Kill ALL MT5/MetaTester/wine processes for a clean start
+pkill -9 -f "terminal64" 2>/dev/null || true
+pkill -9 -f "metatester|MetaTester" 2>/dev/null || true
+sleep 3
 
 START_TIME=$(date +%s)
 TODAY=$(date +%Y%m%d)
-# Count agent log lines before test — used to detect MetaTester completion
-_AGENT_LOG_PATH="$MT5_DIR/Tester/Agent-127.0.0.1-3000/logs/${TODAY}.log"
-PRE_AGENT_LINES=$(python3 -c "
-import codecs, sys
-try:
-    with codecs.open(sys.argv[1], 'r', 'utf-16') as f: print(len(f.readlines()))
-except: print(0)
-" "$_AGENT_LOG_PATH" 2>/dev/null || echo 0)
 
-# Launch MT5 in portable mode — runs the strategy tester in-process,
-# so this single wine process covers the entire backtest lifetime
+# Delete old report — we'll poll for the new one as completion signal
+rm -f "$REPORT_FILE" "${REPORT_FILE%.htm}"*.png
+
+# Launch MT5 in portable mode
 WINEPREFIX="$WINEPREFIX" "$WINE" "$MT5_EXE" /portable "/config:$CONFIG_WIN" \
   > /tmp/mt5_wine.log 2>&1 &
 MT5_PID=$!
 echo "  MT5 launched (pid $MT5_PID) — running test..."
 
-# Show progress while waiting for MT5 to finish
+# Wait for MT5 terminal process to exit (usually quick with ShutdownTerminal=1)
 while kill -0 "$MT5_PID" 2>/dev/null; do
   ELAPSED=$(( $(date +%s) - START_TIME ))
   printf "  ... %ds elapsed\r" "$ELAPSED"
   sleep 2
 done
 wait "$MT5_PID" 2>/dev/null || true
-sleep 1  # allow final log flush
 
-# ── Wait for MetaTester agent to complete ──────────────────────────────────
-# The main terminal (ShutdownTerminal=1) exits in ~3s. The MetaTester agent
-# process runs independently for the full backtest duration. Poll its log
-# until 'thread finished' appears after the lines we recorded pre-test.
-if [[ -f "$_AGENT_LOG_PATH" || $PRE_AGENT_LINES -eq 0 ]]; then
-  echo "  Main terminal exited — waiting for MetaTester agent..."
-  AGENT_TIMEOUT=600
-  while [[ $(( $(date +%s) - START_TIME )) -lt $AGENT_TIMEOUT ]]; do
+# ── Wait for test to complete ──────────────────────────────────────────────
+# Poll for HTML report file to appear (MT5 writes it after test completes)
+echo "  Terminal exited — waiting for test to complete..."
+AGENT_TIMEOUT=600
+while [[ $(( $(date +%s) - START_TIME )) -lt $AGENT_TIMEOUT ]]; do
+  # Check if report was generated (= test complete)
+  if [[ -f "$REPORT_FILE" ]]; then
+    echo "  Report generated — test complete"
+    break
+  fi
+  # Also check agent logs for thread finished (backup signal)
+  _AGENT_LOG=$(find "$MT5_DIR/Tester" -name "${TODAY}.log" -path "*/Agent-127*" \
+    -newer /tmp/mt5_wine.log -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+  if [[ -n "$_AGENT_LOG" ]]; then
     DONE=$(python3 -c "
 import codecs, sys
 try:
     with codecs.open(sys.argv[1], 'r', 'utf-16') as f:
-        lines = f.readlines()
-    new_lines = lines[int(sys.argv[2]):]
-    print(1 if any('thread finished' in l for l in new_lines) else 0)
-except:
-    print(0)
-" "$_AGENT_LOG_PATH" "$PRE_AGENT_LINES" 2>/dev/null || echo 0)
-    [[ "$DONE" == "1" ]] && break
-    ELAPSED=$(( $(date +%s) - START_TIME ))
-    printf "  MetaTester running... %ds elapsed\r" "$ELAPSED"
-    sleep 3
-  done
-  echo ""
-fi
+        for line in reversed(f.readlines()[-5:]):
+            if 'thread finished' in line: print(1); break
+    else: print(0)
+except: print(0)
+" "$_AGENT_LOG" 2>/dev/null || echo 0)
+    if [[ "$DONE" == "1" ]]; then
+      echo "  Agent thread finished"
+      sleep 2  # allow report flush
+      break
+    fi
+  fi
+  ELAPSED=$(( $(date +%s) - START_TIME ))
+  printf "  Waiting... %ds elapsed\r" "$ELAPSED"
+  sleep 3
+done
+echo ""
 
 END_TIME=$(date +%s)
 WALL_TIME=$(( END_TIME - START_TIME ))
