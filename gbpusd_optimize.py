@@ -1,17 +1,17 @@
 """
-EURUSD Parameter Optimizer
-Runs systematic backtest sweeps for EURUSD expansion.
-Usage: python3 eurusd_optimize.py
+GBPUSD Parameter Optimizer
+Runs systematic backtest sweeps for GBPUSD expansion.
+Usage: python3 gbpusd_optimize.py
 """
-import codecs, subprocess, json, os, sys, time, re
+import codecs, subprocess, json, os, time, re
 from datetime import datetime, timedelta
 
 BASE_DIR    = "/home/charles/.mt5/drive_c/Program Files/MetaTrader 5/MQL5/Experts/orderBlock"
-SET_SRC     = f"{BASE_DIR}/OBInclude/SetFiles/eurusd.set"
+SET_SRC     = f"{BASE_DIR}/OBInclude/SetFiles/gbpusd.set"
 LAST_JSON   = f"{BASE_DIR}/backtest_last.json"
-RESULTS_MD  = f"{BASE_DIR}/docs/eurusd_test_results.md"
-RESULTS_CSV = f"{BASE_DIR}/eurusd_test_results.csv"
-BEST_SET    = f"{BASE_DIR}/OBInclude/SetFiles/eurusd_best.set"
+RESULTS_MD  = f"{BASE_DIR}/docs/gbpusd_test_results.md"
+RESULTS_CSV = f"{BASE_DIR}/gbpusd_test_results.csv"
+BEST_SET    = f"{BASE_DIR}/OBInclude/SetFiles/gbpusd_best.set"
 
 STOP_HOUR = 23
 FROM_DATE = "2022.01.01"
@@ -38,8 +38,8 @@ def apply_params(base_content, params):
 
 def run_backtest():
     env = os.environ.copy()
-    env["SYMBOL"]    = "EURUSD"
-    env["SET_FILE"]  = "eurusd.set"
+    env["SYMBOL"]    = "GBPUSD"
+    env["SET_FILE"]  = "gbpusd.set"
     env["FROM_DATE"] = FROM_DATE
     env["TO_DATE"]   = TO_DATE
     result = subprocess.run(
@@ -57,7 +57,7 @@ def read_results():
         return {"error": str(e)}
 
 def should_stop():
-    now = datetime.now()
+    now  = datetime.now()
     stop = now.replace(hour=STOP_HOUR, minute=0, second=0, microsecond=0)
     if stop <= now:
         stop += timedelta(days=1)
@@ -85,7 +85,7 @@ def log_result(run_id, label, params, data, elapsed):
     return pf_v
 
 def init_logs():
-    header_md = f"""# EURUSD Optimization Results
+    header_md = f"""# GBPUSD Optimization Results
 *Started: {datetime.now().strftime('%Y-%m-%d %H:%M')} — Stop at {STOP_HOUR:02d}:00*
 *Base: Profile=5 Custom, KZ=08-12+13-16 UTC, D1+MacroTrend=true, LIMIT orders, 2022-2026*
 
@@ -104,10 +104,6 @@ TEST_CASES = [
     # Kill zone windows
     ("kz_london_only",  "KZ London only (08-12)",                  {"inpKZ2Start": "20||18||1||20||N",
                                                                      "inpKZ2End":   "21||21||1||23||N"}),
-    ("kz_london_wide",  "KZ London wide (07-13)",                  {"inpKZ1Start": "7||12||1||14||N",
-                                                                     "inpKZ1End":   "13||15||1||17||N",
-                                                                     "inpKZ2Start": "20||18||1||20||N",
-                                                                     "inpKZ2End":   "21||21||1||23||N"}),
     ("kz_ny_add",       "KZ London+NY+PM (08-12+13-16+19-22)",     {"inpKZ2Start": "13||18||1||20||N",
                                                                      "inpKZ2End":   "16||21||1||23||N"}),
     ("kz_off",          "KZ disabled",                             {"inpKillZoneEnabled": "false||false||0||true||N"}),
@@ -119,47 +115,37 @@ TEST_CASES = [
     ("fvg_on",          "inpMSSRequireFVG=true",                   {"inpMSSRequireFVG": "true||false||0||true||N"}),
 
     # TP ratios
-    ("tp_127",          "fibo1rstTP=1.27",                         {"fibo1rstTP": "1.27||1.0||0.1||1.8||N"}),
     ("tp_20",           "fibo1rstTP=2.0",                          {"fibo1rstTP": "2.0||1.0||0.1||1.8||N"}),
     ("tp_25",           "fibo1rstTP=2.5",                          {"fibo1rstTP": "2.5||1.0||0.1||1.8||N"}),
     ("tp_30",           "fibo1rstTP=3.0",                          {"fibo1rstTP": "3.0||1.0||0.1||1.8||N"}),
 
-    # Spread filter (EURUSD: 1 pip = 10 pts on 5-digit broker)
-    ("spread_2",        "inpMaxSpread=2",                          {"inpMaxSpread": "2||0||1||10||N"}),
-    ("spread_5",        "inpMaxSpread=5",                          {"inpMaxSpread": "5||0||1||10||N"}),
-    ("spread_0",        "inpMaxSpread=0 (no limit)",               {"inpMaxSpread": "0||0||1||10||N"}),
-
     # OB quality
     ("outdated_120",    "outdatedOB=120",                          {"outdatedOB": "120||80||1||800||N"}),
-    ("outdated_160",    "outdatedOB=160",                          {"outdatedOB": "160||80||1||800||N"}),
-
-    ("tol_20",          "tolerance=20",                            {"tolerance": "20||50||1||500||N"}),
     ("tol_80",          "tolerance=80",                            {"tolerance": "80||50||1||500||N"}),
-
-    ("body_5",          "minBodySize=5",                           {"minBodySize": "5||10||1||100||N"}),
-    ("body_20",         "minBodySize=20",                          {"minBodySize": "20||10||1||100||N"}),
 
     # Trend filters
     ("d1_off",          "D1Trend=false",                           {"inpRequireD1Trend": "false||false||0||true||N"}),
     ("macro_off",       "MacroTrend=false",                        {"inpMacroTrendEnabled": "false||false||0||true||N"}),
 
-    # Combos
-    ("combo_fvg_tp25",  "FVG=true + tp=2.5",                      {"inpMSSRequireFVG": "true||false||0||true||N",
-                                                                    "fibo1rstTP":       "2.5||1.0||0.1||1.8||N"}),
-    ("combo_best",      "London+NY + FVG + tp=2.5 + ob=120",      {"inpMSSRequireFVG": "true||false||0||true||N",
-                                                                    "fibo1rstTP":       "2.5||1.0||0.1||1.8||N",
-                                                                    "outdatedOB":       "120||80||1||800||N"}),
+    # Combos based on EURUSD learnings
+    ("combo_d1_tp30",   "D1=false + tp=3.0",                      {"inpRequireD1Trend": "false||false||0||true||N",
+                                                                    "fibo1rstTP":        "3.0||1.0||0.1||1.8||N"}),
+    ("combo_fvg_d1",    "FVG=true + D1=false",                    {"inpMSSRequireFVG":  "true||false||0||true||N",
+                                                                    "inpRequireD1Trend": "false||false||0||true||N"}),
+    ("combo_best",      "D1=false + FVG + tp=2.5",                {"inpRequireD1Trend": "false||false||0||true||N",
+                                                                    "inpMSSRequireFVG":  "true||false||0||true||N",
+                                                                    "fibo1rstTP":        "2.5||1.0||0.1||1.8||N"}),
 ]
 
 def main():
     print(f"\n{'='*55}")
-    print(f"  EURUSD Optimizer")
+    print(f"  GBPUSD Optimizer")
     print(f"  Stop time: {STOP_HOUR:02d}:00  |  Tests: {len(TEST_CASES)}")
     print(f"{'='*55}\n")
 
     init_logs()
     base_content = read_set()
-    best_pf = 0.0
+    best_pf    = 0.0
     best_label = "none"
 
     for i, (run_id, label, params) in enumerate(TEST_CASES):
@@ -174,8 +160,8 @@ def main():
         content = apply_params(base_content, params)
         write_set(content)
 
-        t0 = time.time()
-        rc = run_backtest()
+        t0      = time.time()
+        rc      = run_backtest()
         elapsed = time.time() - t0
 
         if rc != 0:
@@ -185,13 +171,13 @@ def main():
         pf_v = log_result(i+1, label, params, data, elapsed)
 
         if pf_v > best_pf:
-            best_pf = pf_v
+            best_pf    = pf_v
             best_label = label
             with codecs.open(SET_SRC, "r", "utf-16") as f:
                 best_content = f.read()
             with codecs.open(BEST_SET, "w", "utf-16") as f:
                 f.write(best_content)
-            print(f"  🏆 New best: PF={pf_v:.2f} saved to eurusd_best.set")
+            print(f"  🏆 New best: PF={pf_v:.2f} saved to gbpusd_best.set")
 
     write_set(base_content)
 
@@ -199,7 +185,7 @@ def main():
 ---
 ## Summary
 - **Best PF**: {best_pf:.2f} — {best_label}
-- **Best set**: `OBInclude/SetFiles/eurusd_best.set`
+- **Best set**: `OBInclude/SetFiles/gbpusd_best.set`
 - **Completed**: {datetime.now().strftime('%Y-%m-%d %H:%M')}
 """
     with open(RESULTS_MD, "a") as f:
@@ -207,8 +193,8 @@ def main():
 
     print(f"\n{'='*55}")
     print(f"  DONE — Best: PF={best_pf:.2f} ({best_label})")
-    print(f"  Results: docs/eurusd_test_results.md")
-    print(f"  Best set: OBInclude/SetFiles/eurusd_best.set")
+    print(f"  Results: docs/gbpusd_test_results.md")
+    print(f"  Best set: OBInclude/SetFiles/gbpusd_best.set")
     print(f"{'='*55}\n")
 
 if __name__ == "__main__":
