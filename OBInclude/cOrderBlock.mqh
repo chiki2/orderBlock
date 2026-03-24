@@ -1088,7 +1088,7 @@ bool cOrderBlock::checkLiquiditySweepBeforeOB(datetime mssLeg, int lookBack = 80
      {
       // first easy check // add tolerance
       distance = MathAbs(BSL.price - HighLevel) / _Point;
-      if((distance <= tolerance && BSL.price >= LowLevel) ||   // 50 pts as tolerance
+      if((distance <= tolerance && BSL.price >= LowLevel) ||   // tolerance is raw MT5 points (not pips)
          BSL.price <= HighLevel)
         {
          sweepLevel = HighLevel;
@@ -1104,7 +1104,7 @@ bool cOrderBlock::checkLiquiditySweepBeforeOB(datetime mssLeg, int lookBack = 80
    if(isBear == false)
      {
       distance = MathAbs(SSL.price - LowLevel) / _Point;
-      if((distance <= tolerance && SSL.price <= LowLevel) ||   // 50 pts as tolerance
+      if((distance <= tolerance && SSL.price <= LowLevel) ||   // tolerance is raw MT5 points (not pips)
          (SSL.price >= LowLevel))
         {
          sweepLevel = LowLevel;

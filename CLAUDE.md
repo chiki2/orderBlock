@@ -84,6 +84,19 @@ bash backtest.sh
 - `g_reasonCounters` array size must equal `ENUM_REASON_last_value + 1` — crashes if wrong
 - Do NOT add `#include "langs.mqh"` to `helpers.mqh` — causes 100+ compile errors
 
+## Per-Symbol Calibration — minImBalanced & tolerance
+Both `minImBalanced` (FVG size) and `tolerance` (sweep proximity) are in **raw MT5 points** (not pips, not price units). The conversion depends on `_Point` / `Digits()`:
+
+| Symbol | Digits | _Point | 50 pts = | Calibrated defaults |
+|--------|--------|--------|----------|-------------------|
+| XAUUSD | 2 | 0.01 | $0.50 (5 pips) | minImB=40, tol=50 |
+| EURUSD | 5 | 0.00001 | 0.5 pips | minImB=40, tol=50 |
+| USDJPY | 3 | 0.001 | 0.5 pips | minImB=40, tol=80 |
+| GBPUSD | 5 | 0.00001 | 0.5 pips | minImB=40, tol=50 |
+| NAS100 | 2 | 0.01 | $0.50 | minImB=40, tol=50 |
+
+**Rule**: When adding a new symbol, check `Digits()` and scale tolerance accordingly. For JPY crosses (3 digits), tol=80 has been validated as optimal via cross-year testing.
+
 ## OB State Machine — Critical Quirks
 - **`setOBOrder()` sets `isDone=true` immediately** after placing a limit order (OrderProcess.mqh ~line 300).
   Any code gated on `!obBuffer[i].isDone` will be silently skipped for pending orders.
