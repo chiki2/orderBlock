@@ -1,0 +1,11 @@
+label,pf,trades,dd_pct,balance,log
+Baseline,1.27,74,3.19,10317.01,4 expired
+tolerance=80,1.42,79,2.85,10522.38,5 expired
+tolerance=100,1.39,80,2.86,10511.36,5 expired
+No D1Trend,1.11,87,3.84,10154.33,4 expired
+No MacroTrend,1.32,99,2.9,10453.57,4 expired
+tol=80 + No D1,1.2,93,4.03,10296.36,5 expired
+tol=100 + No D1,1.19,96,4.04,10292.11,5 expired
+LIMIT orders (keep tp=1.5),1.12,62,3.7,10145.95,11 expired
+LIMIT + tol=80,1.23,67,3.07,10306.89,13 expired
+Wider KZ (07-17),1.2,80,3.12,10255.19,4 expired
