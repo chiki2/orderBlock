@@ -9,10 +9,34 @@ Based on overnight cross-year validation (35 tests) and deep code analysis.
 | USDJPY | 5/5 profitable | DEPLOY |
 | GBPUSD | 4/5 profitable | DEPLOY |
 | XAUUSD | 4/5 profitable but 2-6 trades/yr | Too sparse |
-| EURJPY | 3/5 profitable | Marginal |
-| AUDJPY | 2/5 | Not robust |
-| GBPJPY | 1/5 | Not robust |
+| EURJPY | **5/5** (tolerance=80) | DEPLOY (upgraded overnight) |
+| AUDJPY | 2/5 | Not robust (KZ sweep confirmed) |
+| GBPJPY | 1/5 | Not robust (KZ sweep confirmed) |
 | USDX | 1/5 | Not robust |
+
+## Overnight Results (completed)
+
+### EURJPY tolerance=80 — PROMOTED TO DEPLOY
+- Combo sweep (10 tests): tolerance=80 best (PF 1.27→1.42, DD 3.19%→2.85%)
+- Cross-year revalidation: **5/5 profitable** (was 3/5 with tolerance=50)
+- 2023: 0.82→1.01 | 2024: 0.94→1.06 | Applied to eurjpy.set
+
+### GBPJPY/AUDJPY KZ Sweep (8 tests) — CONFIRMED NOT VIABLE
+- Kill zones halve GBPJPY DD (12.55→5.20%) but PF stays <1.0
+- AUDJPY: KZ actually worsens PF (0.91→0.72-0.78)
+- Neither symbol is fixable by parameter tuning alone
+
+### XAUUSD Sparsity Sweep (10 tests) — CURRENT CONFIG IS OPTIMAL
+- Every filter relaxation causes DD explosion (28-57%)
+- MacroTrend is the critical filter
+- Wider KZ: 3x trades but 280x DD
+- The strategy is inherently sparse for gold (2-6 high-quality setups/yr)
+
+### Code Analysis — Key Findings
+- `hasOppositeOB()` is dead code — declared but never called
+- USDX cancellations come from: MT5 expiry timer + daily bias + OB mitigation
+- ATR_max/ATR_min use raw price units — dead for non-XAUUSD (#64)
+- ~30 unused input parameters in inputs.mqh
 
 ## Priority 1 — ATR Normalization Fix (GitHub #64)
 
