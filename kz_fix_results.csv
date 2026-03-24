@@ -1,0 +1,9 @@
+label,symbol,pf,trades,dd_pct,balance,log
+GBPJPY baseline (KZ off),GBPJPY,0.62,102,12.55,8830.62,29 expired
+GBPJPY KZ=USDJPY (08-12+13-16),GBPJPY,0.67,51,5.47,9528.82,16 expired
+GBPJPY KZ=London+NY (08-12+13-17),GBPJPY,0.71,0,5.2,0,5 expired
+GBPJPY KZ=Wide (07-17),GBPJPY,0.67,54,6.19,9485.48,20 expired
+AUDJPY baseline (KZ off),AUDJPY,0.91,81,4.41,9785.18,38 expired
+AUDJPY KZ=USDJPY (08-12+13-16),AUDJPY,0.72,38,4.85,9639.02,17 expired
+AUDJPY KZ=London+NY (08-12+13-17),AUDJPY,0.73,39,4.75,9618.71,22 expired
+AUDJPY KZ=Asian+London (00-06+08-14),AUDJPY,0.78,54,4.59,9680.52,23 expired
