@@ -521,6 +521,7 @@ int OnCalculate(const int rates_total,
                 const datetime &time[],
                 const double &open[],
                 const double &high[],
+                const double &low[],
                 const double &close[],
                 const long &tick_volume[],
                 const long &volume[],
@@ -561,24 +562,6 @@ int OnCalculate(const int rates_total,
       
       BuildProfile();
       DrawProfile();
-   }
-      else
-      {
-         if(dt.hour == 0 && (lastBuildTime == 0 || !IsNewDay(lastBuildTime, barTime)))
-            needsRefresh = true;
-      }
-   }
-   else
-   {
-      if(prev_calculated == 0 || rates_total > prev_calculated)
-         needsRefresh = true;
-   }
-   
-   if(needsRefresh)
-   {
-      BuildProfile();
-      DrawProfile();
-      lastBuildTime = currentTime;
    }
    
    for(int i = 0; i < MathMin(rates_total, 10); i++)
