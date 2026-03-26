@@ -491,7 +491,7 @@ void DrawProfile()
          if(ObjectCreate(0, vaBoxName, OBJ_RECTANGLE, 0, g_currentProfile.startTime, vaTop))
          {
             ObjectSetInteger(0, vaBoxName, OBJPROP_COLOR, VAH_Color);
-            ObjectSetInteger(0, vaBoxName, OBJPROP_FILL, true);
+            ObjectSetInteger(0, vaBoxName, OBJPROP_FILL, FillVA);
             ObjectSetInteger(0, vaBoxName, OBJPROP_BACK, true);
             ObjectSetDouble(0, vaBoxName, OBJPROP_PRICE, vaTop);
             ObjectSetDouble(0, vaBoxName, OBJPROP_PRICE, vaBottom);
