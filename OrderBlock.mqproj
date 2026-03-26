@@ -250,6 +250,12 @@
       "path":"OBInclude\\qrcode.bmp",
       "name":"",
       "relative_to_project":true
+    },
+    {
+      "type":"image",
+      "path":"OBInclude\\rocket.bmp",
+      "name":"",
+      "relative_to_project":true
     }
   ]
 }

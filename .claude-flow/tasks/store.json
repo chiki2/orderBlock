@@ -1,0 +1,68 @@
+{
+  "tasks": {
+    "task-1774339826384-19iyir": {
+      "taskId": "task-1774339826384-19iyir",
+      "type": "refactor",
+      "description": "Cache ATR value at bar-level in helpers.mqh — replace 12+ iATR() handle recreations per bar with single cached value using static var + isNewBar gate",
+      "priority": "high",
+      "status": "completed",
+      "progress": 100,
+      "assignedTo": [],
+      "tags": [
+        "performance",
+        "helpers.mqh",
+        "caching"
+      ],
+      "createdAt": "2026-03-24T08:10:26.384Z",
+      "startedAt": null,
+      "completedAt": "2026-03-24T08:27:06.532Z",
+      "result": {
+        "status": "done",
+        "details": "ATR handle cached in helpers.mqh — persistent static handle for default params, temp handle for non-default. Compiles clean."
+      }
+    },
+    "task-1774339828622-30p841": {
+      "taskId": "task-1774339828622-30p841",
+      "type": "refactor",
+      "description": "Cache H4/D1 CopyRates at bar-level in cOrderBlock.mqh — move CopyRates out of isAllGood() per-OB loop into once-per-bar static cache",
+      "priority": "high",
+      "status": "completed",
+      "progress": 100,
+      "assignedTo": [],
+      "tags": [
+        "performance",
+        "cOrderBlock.mqh",
+        "caching"
+      ],
+      "createdAt": "2026-03-24T08:10:28.622Z",
+      "startedAt": null,
+      "completedAt": "2026-03-24T08:27:08.404Z",
+      "result": {
+        "status": "done",
+        "details": "H4/D1 CopyRates cached per-bar using static arrays + iTime() gate in cOrderBlock.mqh. Saves ~100 CopyRates/run."
+      }
+    },
+    "task-1774339830505-siixgx": {
+      "taskId": "task-1774339830505-siixgx",
+      "type": "refactor",
+      "description": "Remove hasOppositeOB() dead code from cOrderBlock.mqh — function declared line 25, implemented lines 107-129, never called anywhere",
+      "priority": "low",
+      "status": "completed",
+      "progress": 100,
+      "assignedTo": [],
+      "tags": [
+        "cleanup",
+        "cOrderBlock.mqh",
+        "dead-code"
+      ],
+      "createdAt": "2026-03-24T08:10:30.505Z",
+      "startedAt": null,
+      "completedAt": "2026-03-24T08:27:10.134Z",
+      "result": {
+        "status": "done",
+        "details": "hasOppositeOB() declaration (line 25) and implementation (lines 107-129) removed from cOrderBlock.mqh. Dead code confirmed by grep."
+      }
+    }
+  },
+  "version": "3.0.0"
+}

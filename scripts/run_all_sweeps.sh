@@ -1,19 +1,40 @@
 #!/bin/bash
-# Chain: ATR sweep (already running) → Unexplored params sweep
-# Usage: This script waits for the ATR sweep to finish, then runs the next sweep.
+# Master sweep runner — chains all pending sweeps after EURUSD combo
+# Run: nohup bash scripts/run_all_sweeps.sh > /tmp/all_sweeps.log 2>&1 &
 
 BASE="/home/charles/.mt5/drive_c/Program Files/MetaTrader 5/MQL5/Experts/orderBlock"
 cd "$BASE"
 
-echo "=== Waiting for ATR sweep to finish ==="
-while pgrep -f "atr_pct_sweep.py" > /dev/null 2>&1; do
-    sleep 30
+echo "=========================================="
+echo "  MASTER SWEEP RUNNER — $(date)"
+echo "=========================================="
+
+# Wait for any running backtest to finish
+echo "Waiting for any running backtests..."
+while pgrep -f "eurusd_combo.py" > /dev/null 2>&1; do
+    sleep 60
 done
-echo "=== ATR sweep done at $(date) ==="
+echo "EURUSD combo done at $(date)"
+
+# 1. Weak-year forensics
+echo ""
+echo "[PHASE 1] Weak-Year Forensics — $(date)"
+echo "---"
+python3 scripts/weak_year_forensics.py
+
+# 2. Trailing stop optimization
+echo ""
+echo "[PHASE 2] Trailing Stop Sweep — $(date)"
+echo "---"
+python3 scripts/trailing_stop_sweep.py
+
+# 3. Untested parameters
+echo ""
+echo "[PHASE 3] Untested Parameters Sweep — $(date)"
+echo "---"
+python3 scripts/untested_params_sweep.py
 
 echo ""
-echo "=== Starting Unexplored Parameters Sweep at $(date) ==="
-python3 scripts/unexplored_sweep.py 2>&1 | tee /tmp/unexplored_sweep.log
-
-echo ""
-echo "=== ALL SWEEPS COMPLETE at $(date) ==="
+echo "=========================================="
+echo "  ALL SWEEPS COMPLETE — $(date)"
+echo "=========================================="

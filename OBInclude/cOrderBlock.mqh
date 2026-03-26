@@ -1349,7 +1349,7 @@ bool cOrderBlock::isAllGood(int i)
    // Macro trend filter: skip ALL OBs when monthly trend has no clear direction
    if(g_macroTrendEnabled)
      {
-      MarketTrend macroTrend = GetMarketTrend(PERIOD_W1, 24);
+      MarketTrend macroTrend = g_cachedMacroTrend;  // cached in RefreshTrendCache()
       if(macroTrend == TREND_RANGE || macroTrend == TREND_UKNOWN)
         {
          reason = ENUM_REASON_MACRO_RANGE;
@@ -1360,7 +1360,7 @@ bool cOrderBlock::isAllGood(int i)
    // D1 trend confluence: reject OB if it trades against the daily trend (W1->D1 cascade)
    if(g_d1TrendEnabled)
      {
-      MarketTrend d1Trend = GetMarketTrend(PERIOD_D1, 5);
+      MarketTrend d1Trend = g_cachedD1Trend;  // cached in RefreshTrendCache()
       if((isBear && d1Trend == TREND_BULLISH) || (!isBear && d1Trend == TREND_BEARISH))
         {
          reason = ENUM_REASON_D1_COUNTER_TREND;
@@ -1401,7 +1401,7 @@ bool cOrderBlock::isAllGood(int i)
   // H4 trend confluence: reject OB if it trades against the H4 trend
    if(g_h4TrendEnabled)
      {
-      MarketTrend h4Trend = GetMarketTrend(PERIOD_H4, 5);
+      MarketTrend h4Trend = g_cachedH4Trend;  // cached in RefreshTrendCache()
       if((isBear && h4Trend == TREND_BULLISH) || (!isBear && h4Trend == TREND_BEARISH))
         {
          reason = ENUM_REASON_H4_COUNTER_TREND;
