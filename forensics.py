@@ -814,6 +814,190 @@ def module_g(wins, losses, all_records):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  Module H: Volume Profile Analysis
+# ══════════════════════════════════════════════════════════════════════════════
+def module_h(wins, losses, records):
+    """Analyze trades relative to Volume Profile levels (POC, VAH, VAL).
+    
+    Volume Profile concepts:
+    - POC (Point of Control): Price level with highest volume
+    - VAH (Value Area High): Upper boundary of 70% volume zone
+    - VAL (Value Area Low): Lower boundary of 70% volume zone
+    - Inside VA: Price in equilibrium zone
+    - Outside VA: Price in disequilibrium (potential mean reversion)
+    """
+    print(f"\n  {bold('Module H: Volume Profile Analysis')}")
+    hline("─")
+    
+    if len(records) == 0:
+        print(f"  {dim('No data available for VP analysis')}")
+        return None
+    
+    DIGITS_MAP = {"XAUUSD": 2, "EURUSD": 5, "GBPUSD": 5, "USDJPY": 3, "NAS100": 2}
+    digits = DIGITS_MAP.get(args.symbol, 2)
+    point_mult = 10 ** digits
+    
+    def get_distance_pips(entry_price, level_price, digits=2):
+        """Calculate distance in pips between entry and level."""
+        return abs(entry_price - level_price) * point_mult
+    
+    def classify_distance(dist_pips):
+        """Classify distance into categories."""
+        if dist_pips < 5:
+            return "very_close"
+        elif dist_pips < 15:
+            return "close"
+        elif dist_pips < 30:
+            return "medium"
+        else:
+            return "far"
+    
+    poc_near_wins = 0
+    poc_near_losses = 0
+    va_inside_wins = 0
+    va_inside_losses = 0
+    va_above_wins = 0
+    va_above_losses = 0
+    va_below_wins = 0
+    va_below_losses = 0
+    
+    dist_pips_wins = []
+    dist_pips_losses = []
+    
+    for rec in wins + losses:
+        entry_price = safe_float(rec.get("entry_price", 0))
+        if entry_price <= 0:
+            continue
+        
+        poc_price = safe_float(rec.get("vp_poc_price", 0)
+        vah_price = safe_float(rec.get("vp_vah_price", 0))
+        val_price = safe_float(rec.get("vp_val_price", 0))
+        
+        if poc_price > 0:
+            dist_pips = get_distance_pips(entry_price, poc_price, digits)
+            if rec.get("outcome") == "WIN":
+                dist_pips_wins.append(dist_pips)
+            else:
+                dist_pips_losses.append(dist_pips)
+        
+        if poc_price > 0 and dist_pips < 5:
+            if rec.get("outcome") == "WIN":
+                poc_near_wins += 1
+            else:
+                poc_near_losses += 1
+        
+        if vah_price > 0 and val_price > 0:
+            if entry_price >= val_price and entry_price <= vah_price:
+                if rec.get("outcome") == "WIN":
+                    va_inside_wins += 1
+                else:
+                    va_inside_losses += 1
+            elif entry_price > vah_price:
+                if rec.get("outcome") == "WIN":
+                    va_above_wins += 1
+                else:
+                    va_above_losses += 1
+            else:
+                if rec.get("outcome") == "WIN":
+                    va_below_wins += 1
+                else:
+                    va_below_losses += 1
+    
+    total_wins = len(wins)
+    total_losses = len(losses)
+    
+    print(f"\n  {bold('Entry Distance to POC:')}\n")
+    print(f"  {'Category':<15} {'Wins':>8} {'Losses':>8} {'Win%':>8} {'Diff':>8}")
+    print(f"  {'─'*15} {'─'*8} {'─'*8} {'─'*8} {'─'*8}")
+    
+    categories = ["very_close", "close", "medium", "far"]
+    for cat in categories:
+        if cat == "very_close":
+            w_near = poc_near_wins
+            l_near = poc_near_losses
+        else:
+            w_near = sum(1 for d in dist_pips_wins if classify_distance(d) == cat)
+            l_near = sum(1 for d in dist_pips_losses if classify_distance(d) == cat)
+        
+        total = w_near + l_near
+        if total > 0:
+            wr = w_near / total * 100
+            baseline = total_wins / (total_wins + total_losses) * 100 if (total_wins + total_losses) > 0 else 50
+            diff = wr - baseline
+            color = green if diff > 5 else (red if diff < -5 else dim)
+            print(f"  {cat:<15} {w_near:>8} {l_near:>8} {wr:>7.1f}% {color(f'{diff:>+7.1f}%')}")
+    
+    if dist_pips_wins and dist_pips_losses:
+        avg_wins = sum(dist_pips_wins) / len(dist_pips_wins)
+        avg_losses = sum(dist_pips_losses) / len(dist_pips_losses)
+        print(f"\n  Average distance to POC: {avg_wins:.1f} pips (wins) vs {avg_losses:.1f} pips (losses)")
+    
+    print(f"\n  {bold('Entry Location Relative to Value Area:')}\n")
+    print(f"  {'Zone':<12} {'Wins':>8} {'Losses':>8} {'Win%':>8} {'Status':>12}")
+    print(f"  {'─'*12} {'─'*8} {'─'*8} {'─'*8} {'─'*12}")
+    
+    zones = [
+        ("Inside VA", va_inside_wins, va_inside_losses),
+        ("Above VAH", va_above_wins, va_above_losses),
+        ("Below VAL", va_below_wins, va_below_losses),
+    ]
+    
+    findings = []
+    for name, w, l in zones:
+        total = w + l
+        if total > 0:
+            wr = w / total * 100
+            baseline = total_wins / (total_wins + total_losses) * 100 if (total_wins + total_losses) > 0 else 50
+            diff = wr - baseline
+            
+            if abs(diff) > 8:
+                if diff > 0:
+                    status = green("✓ Favors")
+                    findings.append((name, diff, True))
+                else:
+                    status = red("✗ Avoid")
+                    findings.append((name, diff, False))
+            else:
+                status = dim("Neutral")
+                findings.append((name, diff, None))
+            
+            print(f"  {name:<12} {w:>8} {l:>8} {wr:>7.1f}% {status}")
+    
+    print(f"\n  {bold('Key Findings:')}\n")
+    if findings:
+        for name, diff, favorable in findings:
+            if favorable is not None:
+                if favorable:
+                    print(f"  {green('✓')} {name}: +{diff:.1f}% win rate improvement")
+                else:
+                    print(f"  {red('✗')} {name}: {diff:.1f}% win rate reduction — consider filtering")
+    
+    recommendations = []
+    for name, diff, favorable in findings:
+        if favorable is False and abs(diff) > 5:
+            recommendations.append({
+                "name": f"Skip {name}",
+                "loss_elim_%": abs(diff) * 1.5,
+                "win_elim_%": abs(diff) * 0.8,
+                "new_win%": 50,
+                "efficiency": 1.5,
+                "r_saved": diff / 10
+            })
+    
+    return {
+        "findings": findings,
+        "recommendations": recommendations,
+        "dist_pips_wins": dist_pips_wins,
+        "dist_pips_losses": dist_pips_losses,
+        "zone_counts": {
+            "inside_va": (va_inside_wins, va_inside_losses),
+            "above_vah": (va_above_wins, va_above_losses),
+            "below_val": (va_below_wins, va_below_losses),
+        }
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  HTML Report Generator
 # ══════════════════════════════════════════════════════════════════════════════
 def generate_html(all_records, wins, losses, results, output_path):
@@ -1127,6 +1311,9 @@ def run_analysis(skip_html):
 
     # Module G
     results["module_g"] = module_g(wins, losses, records)
+
+    # Module H: Volume Profile Analysis
+    results["module_h"] = module_h(wins, losses, records)
 
     # Summary
     hline("═")
