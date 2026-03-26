@@ -521,7 +521,6 @@ int OnCalculate(const int rates_total,
                 const datetime &time[],
                 const double &open[],
                 const double &high[],
-                const double &low[],
                 const double &close[],
                 const long &tick_volume[],
                 const long &volume[],
@@ -531,21 +530,38 @@ int OnCalculate(const int rates_total,
       return 0;
    
    datetime currentTime = TimeCurrent();
-   static datetime lastBuildTime = 0;
+   static datetime lastBarTime = 0;
    
-   bool needsRefresh = (currentTime - lastBuildTime) > 60;
+   datetime barTime = time[rates_total - 1];
+   bool isNewBar = (barTime != lastBarTime);
+   lastBarTime = barTime;
    
-   if(ProfileMode == MODE_SESSION)
+   bool needsRefresh = isNewBar;
+   
+   if(ProfileMode == MODE_SESSION && !UseCustomSession)
    {
-      datetime barTime = time[rates_total - 1];
       MqlDateTime dt;
       TimeToStruct(barTime, dt);
       
-      if(UseCustomSession)
-      {
-         if(dt.hour >= SessionStartHour && dt.hour < SessionEndHour)
-            needsRefresh = true;
-      }
+      if(dt.hour == 0 && isNewBar)
+         needsRefresh = true;
+   }
+   else if(ProfileMode == MODE_FIXED_RANGE && (prev_calculated == 0 || rates_total > prev_calculated))
+   {
+      needsRefresh = true;
+   }
+   
+   if(needsRefresh)
+   {
+      ObjectDelete(0, "VP_POC_" + IntegerToString((int)g_currentProfile.startTime));
+      ObjectDelete(0, "VP_VAH_" + IntegerToString((int)g_currentProfile.startTime));
+      ObjectDelete(0, "VP_VAL_" + IntegerToString((int)g_currentProfile.startTime));
+      ObjectDelete(0, "VP_VA_Box_" + IntegerToString((int)g_currentProfile.startTime));
+      ObjectDelete(0, "VP_Session_" + IntegerToString((int)g_currentProfile.startTime));
+      
+      BuildProfile();
+      DrawProfile();
+   }
       else
       {
          if(dt.hour == 0 && (lastBuildTime == 0 || !IsNewDay(lastBuildTime, barTime)))
