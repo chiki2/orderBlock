@@ -42,6 +42,7 @@ input bool             ShowVA = true;                  // Show Value Area
 input bool             ShowProfile = false;            // Show Volume Histogram
 input bool             ShowLabels = true;              // Show Price Labels
 input bool             ShowCurrentSession = false;       // Highlight Current Session
+input bool             FillCurrentSession = false;       // Fill Current Session (vs perimeter only)
 input int              MaxRowsDisplay = 100;           // Max Rows to Display
 
 input group "=== Colors ==="
@@ -504,7 +505,7 @@ void DrawProfile()
              if(ObjectCreate(0, sessionBox, OBJ_RECTANGLE, 0, g_currentProfile.startTime, chartMax))
             {
                ObjectSetInteger(0, sessionBox, OBJPROP_COLOR, clrGray);
-               ObjectSetInteger(0, sessionBox, OBJPROP_FILL, false);
+               ObjectSetInteger(0, sessionBox, OBJPROP_FILL, FillCurrentSession);
                ObjectSetInteger(0, sessionBox, OBJPROP_BACK, true);
                ObjectSetDouble(0, sessionBox, OBJPROP_PRICE, chartMax);
                ObjectSetDouble(0, sessionBox, OBJPROP_PRICE, chartMin);
