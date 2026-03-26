@@ -39,10 +39,12 @@ input int              SessionEndHour = 24;             // Session End Hour (UTC
 input group "=== Display Settings ==="
 input bool             ShowPOC = true;                // Show Point of Control
 input bool             ShowVA = true;                  // Show Value Area
+input bool             FillVA = false;                // Fill VA (vs perimeter only)
 input bool             ShowProfile = false;            // Show Volume Histogram
 input bool             ShowLabels = true;              // Show Price Labels
 input bool             ShowCurrentSession = false;       // Highlight Current Session
 input bool             FillCurrentSession = false;       // Fill Current Session (vs perimeter only)
+input bool             ShowHistory = false;              // Show POC/VAH/VAL history
 input int              MaxRowsDisplay = 100;           // Max Rows to Display
 
 input group "=== Colors ==="
@@ -382,7 +384,23 @@ void DrawProfile()
    
    if(ShowPOC)
    {
-      string pocName = prefix + "POC_" + IntegerToString((int)g_currentProfile.startTime);
+      string pocName;
+      string labelName;
+      
+      if(!ShowHistory)
+      {
+         pocName = prefix + "POC_Current";
+         labelName = prefix + "POC_Label";
+         
+         ObjectDelete(0, prefix + "POC_Previous");
+         ObjectDelete(0, prefix + "POC_Label_Previous");
+      }
+      else
+      {
+         pocName = prefix + "POC_" + IntegerToString((int)g_currentProfile.startTime);
+         labelName = prefix + "POC_Label_" + IntegerToString((int)g_currentProfile.startTime);
+      }
+      
       if(ObjectFind(0, pocName) < 0)
       {
          ObjectCreate(0, pocName, OBJ_HLINE, 0, 0, g_currentProfile.pocPrice);
@@ -398,7 +416,6 @@ void DrawProfile()
       
       if(ShowLabels)
       {
-         string labelName = prefix + "POC_Label_" + IntegerToString((int)g_currentProfile.startTime);
          if(ObjectFind(0, labelName) < 0)
          {
             ObjectCreate(0, labelName, OBJ_TEXT, 0, 0, g_currentProfile.pocPrice);
@@ -416,7 +433,35 @@ void DrawProfile()
    
    if(ShowVA)
    {
-      string vahName = prefix + "VAH_" + IntegerToString((int)g_currentProfile.startTime);
+      string vahName, valName, vaBoxName;
+      string vahLabel, valLabel;
+      
+      if(!ShowHistory)
+      {
+         vahName = prefix + "VAH_Current";
+         valName = prefix + "VAL_Current";
+         vaBoxName = prefix + "VA_Box_Current";
+         vahLabel = prefix + "VAH_Label";
+         valLabel = prefix + "VAL_Label";
+         
+         ObjectDelete(0, prefix + "VAH_Previous");
+         ObjectDelete(0, prefix + "VAL_Previous");
+         ObjectDelete(0, prefix + "VA_Box_Previous");
+         ObjectDelete(0, prefix + "VAH_Label_Previous");
+         ObjectDelete(0, prefix + "VAL_Label_Previous");
+      }
+      else
+      {
+         vahName = prefix + "VAH_" + IntegerToString((int)g_currentProfile.startTime);
+         valName = prefix + "VAL_" + IntegerToString((int)g_currentProfile.startTime);
+         vaBoxName = prefix + "VA_Box_" + IntegerToString((int)g_currentProfile.startTime);
+         vahLabel = prefix + "VAH_Label_" + IntegerToString((int)g_currentProfile.startTime);
+         valLabel = prefix + "VAL_Label_" + IntegerToString((int)g_currentProfile.startTime);
+      }
+      
+      double vaTop = MathMax(g_currentProfile.vahPrice, g_currentProfile.valPrice);
+      double vaBottom = MathMin(g_currentProfile.vahPrice, g_currentProfile.valPrice);
+      
       if(ObjectFind(0, vahName) < 0)
       {
          ObjectCreate(0, vahName, OBJ_HLINE, 0, 0, g_currentProfile.vahPrice);
@@ -429,7 +474,6 @@ void DrawProfile()
          ObjectSetDouble(0, vahName, OBJPROP_PRICE, g_currentProfile.vahPrice);
       }
       
-      string valName = prefix + "VAL_" + IntegerToString((int)g_currentProfile.startTime);
       if(ObjectFind(0, valName) < 0)
       {
          ObjectCreate(0, valName, OBJ_HLINE, 0, 0, g_currentProfile.valPrice);
@@ -441,10 +485,6 @@ void DrawProfile()
       {
          ObjectSetDouble(0, valName, OBJPROP_PRICE, g_currentProfile.valPrice);
       }
-      
-      string vaBoxName = prefix + "VA_Box_" + IntegerToString((int)g_currentProfile.startTime);
-      double vaTop = MathMax(g_currentProfile.vahPrice, g_currentProfile.valPrice);
-      double vaBottom = MathMin(g_currentProfile.vahPrice, g_currentProfile.valPrice);
       
       if(ObjectFind(0, vaBoxName) < 0)
       {
@@ -467,7 +507,6 @@ void DrawProfile()
       if(ShowLabels)
       {
          datetime labelTime = g_currentProfile.endTime;
-         string vahLabel = prefix + "VAH_Label";
          if(ObjectFind(0, vahLabel) < 0)
          {
             ObjectCreate(0, vahLabel, OBJ_TEXT, 0, labelTime, g_currentProfile.vahPrice);
@@ -479,7 +518,6 @@ void DrawProfile()
             ObjectSetDouble(0, vahLabel, OBJPROP_PRICE, g_currentProfile.vahPrice);
          }
          
-         string valLabel = prefix + "VAL_Label";
          if(ObjectFind(0, valLabel) < 0)
          {
             ObjectCreate(0, valLabel, OBJ_TEXT, 0, labelTime, g_currentProfile.valPrice);
