@@ -28,6 +28,12 @@ echo "[PHASE B] MinRR Cross-Year Validation — $(date)"
 echo "---"
 python3 scripts/minrr_crossyear.py
 
+# Trailing stop cross-year validation (auto-detects winners from Phase 5)
+echo ""
+echo "[PHASE C] Trailing Stop Cross-Year Validation — $(date)"
+echo "---"
+python3 scripts/trailing_stop_crossyear.py
+
 echo ""
 echo "=========================================="
 echo "  REMAINING SWEEPS COMPLETE — $(date)"
