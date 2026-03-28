@@ -34,6 +34,12 @@ echo "[PHASE 3] Untested Parameters Sweep — $(date)"
 echo "---"
 python3 scripts/untested_params_sweep.py
 
+# 4. EURUSD cross-year validation (DailyBias)
+echo ""
+echo "[PHASE 4] EURUSD Cross-Year Validation — $(date)"
+echo "---"
+python3 scripts/eurusd_crossyear.py
+
 echo ""
 echo "=========================================="
 echo "  ALL SWEEPS COMPLETE — $(date)"
