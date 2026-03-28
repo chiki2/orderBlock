@@ -140,7 +140,8 @@ def run_phase1():
             pf     = parse_float(result.get("profit_factor", 0))
             trades = int(result.get("traded", 0) or 0)
             dd     = parse_float(result.get("max_dd_pct", 0))
-            wins   = int(result.get("wins", result.get("profit_trades", 0)) or 0)
+            wins_raw = result.get("profit_trades", result.get("wins", "0"))
+            wins   = int(str(wins_raw).split()[0]) if wins_raw else 0
             wr     = wins / trades * 100 if trades > 0 else 0
             mark   = "✓" if (pf >= 1.5 and trades >= 10) else ("~" if pf >= 1.1 else "✗")
             if label == "Baseline":
