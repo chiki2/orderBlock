@@ -134,8 +134,9 @@ def main():
                 trades_n = int(trades_n)
             except:
                 trades_n = 0
-            dd = float(result.get("max_dd_pct", 0) or 0)
-            net = float(result.get("net_profit", 0) or 0)
+            dd_raw = str(result.get("max_dd_pct", 0) or 0)
+            dd = float(dd_raw.split('%')[0].strip().split()[0]) if dd_raw else 0.0
+            net = float(str(result.get("net_profit", 0) or 0).split()[0].replace(',', '.'))
 
             print(f"  PF={pf:.2f}  Trades={trades_n}  DD={dd:.2f}%  Net={net:.2f}  ({elapsed:.0f}s)", flush=True)
             print(format_oneliner(diag), flush=True)

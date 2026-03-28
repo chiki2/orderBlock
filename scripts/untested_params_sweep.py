@@ -119,8 +119,10 @@ def main():
             if result:
                 pf = float(result.get("profit_factor", 0) or 0)
                 trades = int(result.get("traded", 0) or result.get("total_trades", 0) or 0)
-                dd = float(result.get("max_dd_pct", 0) or 0)
-                net = float(result.get("net_profit", 0) or 0)
+                dd_raw = str(result.get("max_dd_pct", 0) or 0)
+                dd = float(dd_raw.split("%")[0].strip().split()[0]) if dd_raw and dd_raw != "0" else 0.0
+                net_raw = str(result.get("net_profit", 0) or 0)
+                net = float(net_raw.split()[0].replace(",", ".")) if net_raw and net_raw != "0" else 0.0
                 print(f"  -> PF={pf:<8.2f} Trades={trades:<4} DD={dd:.2f}%  Net={net:+.2f}  ({elapsed:.0f}s)", flush=True)
             else:
                 pf, trades, dd, net = 0, 0, 0, 0
