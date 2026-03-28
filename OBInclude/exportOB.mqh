@@ -69,6 +69,7 @@ void ExportOBHeader(int handle)
       "c1_open,c1_high,c1_low,c1_close,"
       "c2_open,c2_high,c2_low,c2_close,"
       "atr,spread,bid,ask,"
+      "vp_poc_price,vp_vah_price,vp_val_price,"
       "outcome,r_multiple\n";
    FileWriteString(handle, header);
   }
@@ -147,6 +148,27 @@ void ExportOBEvent(const string event_type,
    double c2l = (ArraySize(rA) > 2) ? rA[2].low   : 0;
    double c2c = (ArraySize(rA) > 2) ? rA[2].close : 0;
 
+   //--- Volume Profile approximation: D1 VWAP as POC, prev session H/L as VAH/VAL
+   double vp_poc = 0, vp_vah = 0, vp_val = 0;
+   MqlRates h1rates[];
+   if(CopyRates(_Symbol, PERIOD_H1, iBarShift(_Symbol, PERIOD_H1, iTime(_Symbol, PERIOD_D1, 1)), 24, h1rates) == 24)
+     {
+      double wsum = 0, vsum = 0;
+      double dh = -DBL_MAX, dl = DBL_MAX;
+      for(int _k = 0; _k < 24; _k++)
+        {
+         double tp = (h1rates[_k].high + h1rates[_k].low + h1rates[_k].close) / 3.0;
+         double v  = (double)h1rates[_k].tick_volume;
+         wsum += tp * v;
+         vsum += v;
+         if(h1rates[_k].high > dh) dh = h1rates[_k].high;
+         if(h1rates[_k].low  < dl) dl = h1rates[_k].low;
+        }
+      vp_poc = (vsum > 0) ? wsum / vsum : 0;
+      vp_vah = dh;
+      vp_val = dl;
+     }
+
    //--- build CSV row (no commas inside string values)
    string row = StringFormat(
       "%s,%s,%s,%s,"           // export_time, event_type, symbol, timeframe
@@ -161,6 +183,7 @@ void ExportOBEvent(const string event_type,
       "%.5f,%.5f,%.5f,%.5f,"  // c1 ohlc
       "%.5f,%.5f,%.5f,%.5f,"  // c2 ohlc
       "%.5f,%d,%.5f,%.5f,"    // atr, spread, bid, ask
+      "%.5f,%.5f,%.5f,"       // vp_poc_price, vp_vah_price, vp_val_price
       "%s,%.4f\n",            // outcome, r_multiple
 
       TimeToString(TimeCurrent(), TIME_DATE | TIME_SECONDS),
@@ -217,6 +240,8 @@ void ExportOBEvent(const string event_type,
       spread,
       cur_bid,
       cur_ask,
+
+      vp_poc, vp_vah, vp_val,
 
       outcome,
       r_multiple

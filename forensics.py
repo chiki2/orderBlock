@@ -869,7 +869,7 @@ def module_h(wins, losses, records):
         if entry_price <= 0:
             continue
         
-        poc_price = safe_float(rec.get("vp_poc_price", 0)
+        poc_price = safe_float(rec.get("vp_poc_price", 0))
         vah_price = safe_float(rec.get("vp_vah_price", 0))
         val_price = safe_float(rec.get("vp_val_price", 0))
         

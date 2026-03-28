@@ -41,6 +41,7 @@ DETECT_FEATS = [
     "c1_open", "c1_high", "c1_low", "c1_close",
     "c2_open", "c2_high", "c2_low", "c2_close",
     "atr", "spread",
+    "vp_poc_price", "vp_vah_price", "vp_val_price",
 ]
 
 # Features taken from the TRADED row (available once order is placed)
