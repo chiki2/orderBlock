@@ -191,6 +191,13 @@ WINEPREFIX="$WINEPREFIX" "$WINE" "$MT5_EXE" /portable "/config:$CONFIG_WIN" \
 MT5_PID=$!
 echo "  MT5 launched (pid $MT5_PID) — running test..."
 
+# Minimize MT5 window as soon as it appears (runs in background, non-blocking)
+( for i in $(seq 1 15); do
+    sleep 2
+    WID=$(xdotool search --name "MetaTrader 5" 2>/dev/null | head -1)
+    [ -n "$WID" ] && xdotool windowminimize "$WID" 2>/dev/null && break
+  done ) &
+
 # Wait for MT5 terminal process to exit (usually quick with ShutdownTerminal=1)
 while kill -0 "$MT5_PID" 2>/dev/null; do
   ELAPSED=$(( $(date +%s) - START_TIME ))

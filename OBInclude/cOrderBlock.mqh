@@ -1229,8 +1229,11 @@ bool cOrderBlock::isAllGood(int i)
    // #26 Daily bias: always re-check even if allChecks=true (bias can flip tick-by-tick)
    if(g_dailyBiasEnabled)
      {
-      double dailyOpen = iOpen(_Symbol, PERIOD_D1, 0);
-      bool bullishBias = (bidPrice > dailyOpen);
+      bool bullishBias;
+      if(g_dailyBiasYesterday)
+         bullishBias = (iClose(_Symbol, PERIOD_D1, 1) > iOpen(_Symbol, PERIOD_D1, 1));
+      else
+         bullishBias = (bidPrice > iOpen(_Symbol, PERIOD_D1, 0));
       if(isBear == false && !bullishBias) { reason = ENUM_REASON_IS_COUNTER_BEARISH;  return false; }
       if(isBear == true  &&  bullishBias) { reason = ENUM_REASON_IS_COUNTER_BULLISH;  return false; }
      }
@@ -1460,8 +1463,11 @@ bool cOrderBlock::isMinQuality()
    // Daily bias — fast reversal guard (always re-check)
    if(g_dailyBiasEnabled)
      {
-      double dailyOpen = iOpen(_Symbol, PERIOD_D1, 0);
-      bool bullishBias = (bidPrice > dailyOpen);
+      bool bullishBias;
+      if(g_dailyBiasYesterday)
+         bullishBias = (iClose(_Symbol, PERIOD_D1, 1) > iOpen(_Symbol, PERIOD_D1, 1));
+      else
+         bullishBias = (bidPrice > iOpen(_Symbol, PERIOD_D1, 0));
       if(isBear == false && !bullishBias) return false;
       if(isBear == true  &&  bullishBias) return false;
      }
