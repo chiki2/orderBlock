@@ -816,7 +816,7 @@ def module_g(wins, losses, all_records):
 # ══════════════════════════════════════════════════════════════════════════════
 #  Module H: Volume Profile Analysis
 # ══════════════════════════════════════════════════════════════════════════════
-def module_h(wins, losses, records):
+def module_h(wins, losses, records, symbol="XAUUSD"):
     """Analyze trades relative to Volume Profile levels (POC, VAH, VAL).
     
     Volume Profile concepts:
@@ -834,7 +834,7 @@ def module_h(wins, losses, records):
         return None
     
     DIGITS_MAP = {"XAUUSD": 2, "EURUSD": 5, "GBPUSD": 5, "USDJPY": 3, "NAS100": 2}
-    digits = DIGITS_MAP.get(args.symbol, 2)
+    digits = DIGITS_MAP.get(symbol, 2)
     point_mult = 10 ** digits
     
     def get_distance_pips(entry_price, level_price, digits=2):
@@ -1266,7 +1266,7 @@ def run_build_dataset():
         sys.exit(1)
     print(green("  Dataset ready."))
 
-def run_analysis(skip_html):
+def run_analysis(skip_html, symbol="XAUUSD"):
     """Load dataset and run all analysis modules."""
     print(f"\n{bold('Step 3/3: Running forensics analysis...')}")
     hline("═")
@@ -1313,7 +1313,7 @@ def run_analysis(skip_html):
     results["module_g"] = module_g(wins, losses, records)
 
     # Module H: Volume Profile Analysis
-    results["module_h"] = module_h(wins, losses, records)
+    results["module_h"] = module_h(wins, losses, records, symbol)
 
     # Summary
     hline("═")
@@ -1367,7 +1367,7 @@ def main():
         run_backtest(args.symbol, args.from_date, args.to_date)
         run_build_dataset()
 
-    run_analysis(args.no_html)
+    run_analysis(args.no_html, args.symbol)
 
 if __name__ == "__main__":
     main()
