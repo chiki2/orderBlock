@@ -40,6 +40,18 @@ echo "[PHASE 4] EURUSD Cross-Year Validation — $(date)"
 echo "---"
 python3 scripts/eurusd_crossyear.py
 
+# 5. Trailing stop sweep (redo — crashed in phase 2 due to old code)
+echo ""
+echo "[PHASE 5] Trailing Stop Sweep (redo) — $(date)"
+echo "---"
+python3 scripts/trailing_stop_sweep.py
+
+# 6. Weak-year forensics (redo — crashed in phase 1)
+echo ""
+echo "[PHASE 6] Weak-Year Forensics (redo) — $(date)"
+echo "---"
+python3 scripts/weak_year_forensics.py
+
 echo ""
 echo "=========================================="
 echo "  ALL SWEEPS COMPLETE — $(date)"
