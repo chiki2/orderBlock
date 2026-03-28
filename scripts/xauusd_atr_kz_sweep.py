@@ -40,9 +40,10 @@ ATR_SWEEP = [
     ("ATR-min=0.10%", {"inpATR_MinPct": "0.10||0.0||0.050000||1.000000||N"}),
     ("ATR-min=0.15%", {"inpATR_MinPct": "0.15||0.0||0.050000||1.000000||N"}),
     ("ATR-min=0.20%", {"inpATR_MinPct": "0.20||0.0||0.050000||1.000000||N"}),
-    # Item 5: London-only kill zone (disable KZ2)
-    ("London-KZ-only", {"inpKZ2Start": "0||16||0||23||N",
-                         "inpKZ2End":   "0||19||0||24||N"}),
+    # Item 5: London-only kill zone (shift KZ2 to 22-23 UTC to effectively disable it)
+    # Cannot use 0-0 — MT5 treats that as invalid and blocks all trades
+    ("London-KZ-only", {"inpKZ2Start": "22||16||0||23||N",
+                         "inpKZ2End":   "23||19||0||24||N"}),
 ]
 
 
