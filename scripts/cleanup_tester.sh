@@ -32,7 +32,7 @@ echo "  Keeping ticks for: ${KEEP[*]}"
 echo ""
 
 # ── 1. Remove ob_data / ob_candles CSVs from tester agents ─────────────────
-echo "[1/3] Removing ob_data/ob_candles from tester agent Files/..."
+echo "[1/2] Removing ob_data/ob_candles from tester agent Files/..."
 DELETED_CSV=0
 while IFS= read -r -d '' f; do
     rm -f "$f"
@@ -40,18 +40,8 @@ while IFS= read -r -d '' f; do
 done < <(find "$MT5_TESTER" -type f \( -name "ob_data_*.csv" -o -name "ob_candles_*.csv" \) -print0 2>/dev/null)
 echo "      Removed $DELETED_CSV CSV files from tester agents"
 
-# ── 2. Remove ob_data / ob_candles CSVs from live Files/ dir ───────────────
-echo "[2/3] Removing old ob_data/ob_candles from MQL5/Files/..."
-DELETED_LIVE=0
-while IFS= read -r -d '' f; do
-    # Keep the most recent file per symbol (sorted by date in filename)
-    rm -f "$f"
-    ((DELETED_LIVE++)) || true
-done < <(find "$MT5_FILES" -type f \( -name "ob_data_*.csv" -o -name "ob_candles_*.csv" \) -print0 2>/dev/null)
-echo "      Removed $DELETED_LIVE CSV files from MQL5/Files"
-
-# ── 3. Remove tick data for non-deployed symbols ────────────────────────────
-echo "[3/3] Removing tick data for non-deployed symbols..."
+# ── 2. Remove tick data for non-deployed symbols ────────────────────────────
+echo "[2/2] Removing tick data for non-deployed symbols..."
 TICKS_DIR="$MT5_TESTER/bases/FusionMarkets-Live/ticks"
 FREED=0
 if [ -d "$TICKS_DIR" ]; then
