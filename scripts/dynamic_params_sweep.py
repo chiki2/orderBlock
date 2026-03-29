@@ -195,7 +195,8 @@ def run_xv(symbol, set_file, label, overrides):
     full_r   = next((r for r in xv_results if r["window"] == "Full"), None)
     ok_years = sum(1 for r in annual if r["ok"])
     verdict  = ok_years >= 3 and full_r and full_r["pf"] >= 1.5
-    print(f"    → {label}: {ok_years}/4 annual  Full PF={full_r['pf']:.2f if full_r else 0}  {'PASS ✓' if verdict else 'FAIL ✗'}", flush=True)
+    full_pf_str = f"{full_r['pf']:.2f}" if full_r else "0.00"
+    print(f"    → {label}: {ok_years}/4 annual  Full PF={full_pf_str}  {'PASS ✓' if verdict else 'FAIL ✗'}", flush=True)
     return xv_results, verdict
 
 
