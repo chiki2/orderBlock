@@ -1202,7 +1202,7 @@ bool cOrderBlock::isAllGood(int i)
         }
      }
 
-// #60 D1 lower wick rejection — PERF: cached per-bar instead of per-OB
+// #60 D1 wick rejection — directional: large lower wick blocks SELL, large upper wick blocks BUY
    if(inpD1WickFilter)
      {
       static MqlRates s_d1[3];
@@ -1211,12 +1211,24 @@ bool cOrderBlock::isAllGood(int i)
       if(curD1 != s_d1_bar)
         { CopyRates(_Symbol, PERIOD_D1, 0, 3, s_d1); s_d1_bar = curD1; }
       double d1Range = s_d1[1].high - s_d1[1].low;
-      double lowerWick = MathMin(s_d1[1].open, s_d1[1].close) - s_d1[1].low;
-      double wickRatio = (d1Range > 0) ? lowerWick / d1Range : 0;
-      if(wickRatio > 0.35)
+      if(d1Range > 0)
         {
-         reason = ENUM_REASON_D1_WICK_REJECTION;
-         return false;
+         double d1Body    = MathMin(s_d1[1].open, s_d1[1].close);
+         double d1BodyHi  = MathMax(s_d1[1].open, s_d1[1].close);
+         double lowerWick = d1Body - s_d1[1].low;
+         double upperWick = s_d1[1].high - d1BodyHi;
+         // SELL OB: large lower wick = institutions rejected downside → skip sell
+         if(isBear && lowerWick / d1Range > 0.35)
+           {
+            reason = ENUM_REASON_D1_WICK_REJECTION;
+            return false;
+           }
+         // BUY OB: large upper wick = institutions rejected upside → skip buy
+         if(!isBear && upperWick / d1Range > 0.35)
+           {
+            reason = ENUM_REASON_D1_WICK_REJECTION;
+            return false;
+           }
         }
      }
 
