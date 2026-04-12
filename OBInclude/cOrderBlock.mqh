@@ -25,7 +25,7 @@ public:
    bool              hasOppositeOB(bool isOpposite);
    bool              checkForMSSEntry(bool BearishMss = false, datetime start = 0, ENUM_TIMEFRAMES tf = PERIOD_CURRENT);
    bool              checkForCISDEntry(bool BearishMss = false, ENUM_TIMEFRAMES tf = PERIOD_CURRENT);
-   bool              checkForMSSBefore(int lookback = 15);
+   bool              checkForMSSBefore(int lookback = 40);
    datetime          checkForCrossLiquidity(datetime mssLastLeg, int candlesBack = 20, ENUM_TIMEFRAMES tf = PERIOD_CURRENT, ENUM_TIMEFRAMES origintf = PERIOD_CURRENT, bool strict = true);
    bool              hasCounterChoch();
    void              init(int myIndex, datetime startT,
@@ -142,7 +142,7 @@ bool cOrderBlock::checkForMSSEntry(bool BearishMss = false, datetime start = 0, 
    double firstHighLevel = -1.0;
 
    int distance = -1;
-   // OPTI: ChartSetSymbolPeriod triggers a chart redraw — skip in backtests
+// OPTI: ChartSetSymbolPeriod triggers a chart redraw — skip in backtests
    if(!MQL_TESTER)
       ChartSetSymbolPeriod(0, _Symbol, tf);
 
@@ -233,39 +233,41 @@ bool cOrderBlock::checkForMSSEntry(bool BearishMss = false, datetime start = 0, 
       // performed in bulk (different objects/timeframes), consider a kernel that
       // checks conditions per-candle in parallel. Keep this CPU loop for legacy.
       // ── GPU-accelerated: pre-filter bars by break-level, FVG check on CPU hits only
-        MSSLowerStart = lastLowTime;
-        MSSLowerLevel = lastLowLevel;
-        int      gpu_flags[];
-        bool     gpu_ok = GPU_GetMSSBreakFlags(lastHighIndex, lastLowLevel, true, lastLowIndex, tf, gpu_flags);
-        for(int a = lastHighIndex; a >= 0; a--)
-          {
-           // CPU fallback: evaluate break condition here; GPU path: use pre-computed flag
-           if(gpu_ok)
-             {
-              if(a >= ArraySize(gpu_flags) || gpu_flags[a] == 0) continue;
-             }
-           else
-             {
-              MSSLowerBreakLevel = (isBullishCandle(a) == false) ? close(a, tf) : open(a, tf);
-              if(!(MSSLowerBreakLevel < MSSLowerLevel && lastLowIndex > a)) continue;
-             }
-           if(detectFVG(a, true, MSSLowerStart, tf) == true)
-             {
-              if(isLowerMss == false)
-                {
-                 addStars();
-                 entryPrice  = Bid();
-                 MSSLowerEnd = time(a, tf);
-                 drawSwingPoint(name + "-MSS-lower" + TimeToString(MSSLowerStart), MSSLowerStart, MSSLowerLevel, 77, clrRed, -1, "MSS");
-                 drawBreakLevel(name + "-mss-lower-break" + TimeToString(MSSLowerEnd), MSSLowerStart, MSSLowerLevel,
-                                MSSLowerEnd, MSSLowerLevel, clrRed, -1);
+      MSSLowerStart = lastLowTime;
+      MSSLowerLevel = lastLowLevel;
+      int      gpu_flags[];
+      bool     gpu_ok = GPU_GetMSSBreakFlags(lastHighIndex, lastLowLevel, true, lastLowIndex, tf, gpu_flags);
+      for(int a = lastHighIndex; a >= 0; a--)
+        {
+         // CPU fallback: evaluate break condition here; GPU path: use pre-computed flag
+         if(gpu_ok)
+           {
+            if(a >= ArraySize(gpu_flags) || gpu_flags[a] == 0)
+               continue;
+           }
+         else
+           {
+            MSSLowerBreakLevel = (isBullishCandle(a) == false) ? close(a, tf) : open(a, tf);
+            if(!(MSSLowerBreakLevel < MSSLowerLevel && lastLowIndex > a))
+               continue;
+           }
+         if(detectFVG(a, true, MSSLowerStart, tf) == true)
+           {
+            if(isLowerMss == false)
+              {
+               addStars();
+               entryPrice  = Bid();
+               MSSLowerEnd = time(a, tf);
+               drawSwingPoint(name + "-MSS-lower" + TimeToString(MSSLowerStart), MSSLowerStart, MSSLowerLevel, 77, clrRed, -1, "MSS");
+               drawBreakLevel(name + "-mss-lower-break" + TimeToString(MSSLowerEnd), MSSLowerStart, MSSLowerLevel,
+                              MSSLowerEnd, MSSLowerLevel, clrRed, -1);
 
-                 isLowerMss = true;
-                 finalCheck = 10;
-                 return isLowerMss;
-                }
-             }
-          }
+               isLowerMss = true;
+               finalCheck = 10;
+               return isLowerMss;
+              }
+           }
+        }
      }
 
    return false;
@@ -341,20 +343,13 @@ bool cOrderBlock::checkForCISDEntry(bool BearishMss = false, ENUM_TIMEFRAMES tf 
    return false;
   }
 
-bool cOrderBlock::checkForMSSBefore(int lookback = 15)
+//+------------------------------------------------------------------+
+//|                      checkForMSSBefore                                             |
+//+------------------------------------------------------------------+
+bool cOrderBlock::checkForMSSBefore(int lookback = 40)
   {
    if(isMSS == true)
       return true;
-
-   datetime lastLowTime   = 0;
-   datetime lastHighTime  = 0;
-   datetime firstLowTime  = 0;
-   datetime firstHighTime = 0;
-
-   double lastLowLevel   = -1.0;
-   double lastHighLevel  = -1.0;
-   double firstLowLevel  = -1.0;
-   double firstHighLevel = -1.0;
 
    double MSSBreakLevel = -1.0;
    int    startIndex    = bar(startTime);
@@ -365,72 +360,35 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
       return false;
      }
 
-// if ob is bullish we look for a bearish mss ( 1 l , 1 h , 1 l , break displacement )
-   if(isBear == false)   // => MSS BEARISH
+// BULLISH OB: find last swing high before OB, check if price broke above it
+   if(isBear == false)
      {
-      // last low is startindex
-      lastLowLevel     = low(startIndex);
-      lastLowTime      = startTime;
       int lastLowIndex = startIndex;
-
       if(low(startIndex) > low(startIndex - 1))
-        {
          lastLowIndex = startIndex - 1;
-         lastLowLevel = low(lastLowIndex);
-         lastLowTime  = time(lastLowIndex);
-        }
 
-      if(lastLowTime == 0 || lastLowLevel == -1.0)
-        {
-         trashme(ENUM_REASON_NO_MSS);
-         return false;
-        }
-
-      // then we check the last swing high
-      lastHighLevel     = GetLastSwingHigh(lastLowIndex + 1, lookback, lastHighTime, CTOB, true);
+      datetime lastHighTime = 0;
+      double lastHighLevel = GetLastSwingHigh(lastLowIndex + 1, lookback, lastHighTime, CTOB, false);
       int lastHighIndex = iBarShift(_Symbol, CTOB, lastHighTime, true);
-      // MSS level
+
       if(lastHighTime == 0 || lastHighLevel == -1.0)
         {
          trashme(ENUM_REASON_NO_MSS);
          return false;
         }
 
-      // we check for the first lowest swing low == true 6th parameter
-      firstLowLevel     = GetLastSwingLow(lastHighIndex + 1, lookback, firstLowTime, CTOB, true, true);
-      int firstLowIndex = iBarShift(_Symbol, CTOB, firstLowTime, true);
-
-      if(firstLowTime == 0 || firstLowLevel == -1.0)
-        {
-         trashme(ENUM_REASON_NO_MSS);
-         return false;
-        }
-
-      double lastBodyLevel = (isBullishCandle(lastLowIndex) == true) ? open(lastLowIndex) : close(lastLowIndex);
-      if(firstLowLevel < lastBodyLevel)
-        {
-         trashme(ENUM_REASON_NO_MSS);
-         return false;
-        }
-
-      MSSFirst = firstLowTime;
+      MSSFirst = time(lastLowIndex);
       MSSStart = lastHighTime;
       MSSLevel = lastHighLevel;
 
-      if(inpRequireSweep && checkLiquiditySweepBeforeOB(lastLowTime) == false)
+      if(inpRequireSweep && checkLiquiditySweepBeforeOB(time(lastLowIndex)) == false)
         {
          trashme(ENUM_REASON_NO_MSS);
-         return false;
-        }
-
-      if(lastLowLevel > dpMid)
-        {
-         trashme(ENUM_REASON_IS_NOT_DISCOUNT);
          return false;
         }
 
       int lastCandleCheck = (MSSLastCandleChecked == 0) ? lastLowIndex : bar(MSSLastCandleChecked, CTOB);
-      if(lastCandleCheck > 30)
+      if(lastCandleCheck > 50)
         {
          trashme(ENUM_REASON_NO_MSS);
          return false;
@@ -463,74 +421,38 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
         }
      }
 
-// if ob is bearish we look for a bullish mss ( 1 h , 1 l , 1 h , break displacement )
+// BEARISH OB: find last swing low before OB, check if price broke below it
    if(isBear == true)
      {
-
-      // we check the first swing low from the starttime
-      lastHighLevel     = (high(startIndex) < high(startIndex - 1)) ? high(startIndex) : high(startIndex - 1);
-      lastHighTime      = startTime;
       int lastHighIndex = startIndex;
-
       if(high(startIndex) < high(startIndex - 1))
-        {
          lastHighIndex = startIndex - 1;
-         lastHighLevel = high(lastHighIndex);
-         lastHighTime  = time(lastHighIndex);
-        }
 
-      if(lastHighTime == 0 || lastHighLevel == -1.0)
-        {
-         // trashme(ENUM_REASON_NO_MSS);
-         return false;
-        }
+      double lastHighLevel = high(lastHighIndex);
+      datetime lastHighTime = time(lastHighIndex);
 
-      // then we check the last swing high MSS LEVEL
-      lastLowLevel     = GetLastSwingLow(lastHighIndex + 1, lookback, lastLowTime, CTOB, true);
+      datetime lastLowTime = 0;
+      double lastLowLevel = GetLastSwingLow(lastHighIndex + 1, lookback, lastLowTime, CTOB, false);
       int lastLowIndex = iBarShift(_Symbol, CTOB, lastLowTime, true);
 
       if(lastLowTime == 0 || lastLowLevel == -1.0)
         {
-         // trashme(ENUM_REASON_NO_MSS);
-         return false;
-        }
-
-      // we check for the first highest swing low == true 6th parameter
-      firstHighLevel     = GetLastSwingHigh(lastLowIndex + 1, lookback, firstHighTime, CTOB, true, true);
-      int firstHighIndex = iBarShift(_Symbol, CTOB, firstHighTime, true);
-
-      if(firstHighTime == 0 || firstHighLevel == -1.0)
-        {
-         // trashme(ENUM_REASON_NO_MSS);
-         return false;
-        }
-
-      double lastBodyLevel = (isBullishCandle(lastHighIndex) == true) ? open(lastHighIndex) : close(lastHighIndex);
-      if(firstHighLevel > lastBodyLevel)
-        {
          trashme(ENUM_REASON_NO_MSS);
          return false;
         }
 
-      MSSFirst = firstHighTime;
+      MSSFirst = time(lastHighIndex);
       MSSStart = lastLowTime;
       MSSLevel = lastLowLevel;
 
-      if(inpRequireSweep && checkLiquiditySweepBeforeOB(lastHighTime) == false)
+      if(inpRequireSweep && checkLiquiditySweepBeforeOB(time(lastHighIndex)) == false)
         {
          trashme(ENUM_REASON_NO_MSS);
-         return false;
-        }
-
-      if(lastHighLevel < dpMid)
-        {
-
-         trashme(ENUM_REASON_IS_NOT_PREMIUM);
          return false;
         }
 
       int lastCandleCheck = (MSSLastCandleChecked == 0) ? lastHighIndex : bar(MSSLastCandleChecked, CTOB);
-      if(lastCandleCheck > 30)
+      if(lastCandleCheck > 50)
         {
          trashme(ENUM_REASON_NO_MSS);
          return false;
@@ -544,7 +466,6 @@ bool cOrderBlock::checkForMSSBefore(int lookback = 15)
             (inpMSSRequireFVG == false || detectFVG(a, true, MSSLevel, CTOB) == true) &&
             lastLowIndex > a)
            {
-            MSSEnd = time(a, CTOB);
             if(isMSS == false)
               {
                addStars();
@@ -766,8 +687,22 @@ void cOrderBlock::init(int myIndex, datetime startT,
       if(lssc != startTime)
         {
          lsscPrice = open(bar(lssc, CTOB), CTOB);
-         lowSide   = (isBear == false) ? low(bar(startTime)) : high(bar(startTime));
          isMulti   = true;
+         // Multi-candle OB: find actual extreme across all candles
+         int obStart = bar(lssc, CTOB);
+         int obEnd   = bar(startTime, CTOB);
+         if(isBear == false)
+           {
+            lowSide = low(obEnd);
+            for(int k = obEnd; k <= obStart; k++)
+               if(low(k) < lowSide) lowSide = low(k);
+           }
+         else
+           {
+            lowSide = high(obEnd);
+            for(int k = obEnd; k <= obStart; k++)
+               if(high(k) > lowSide) lowSide = high(k);
+           }
         }
 
       mitigatedLine = (lsscPrice + lowSide) / 2;
@@ -1061,7 +996,7 @@ bool cOrderBlock::checkValidImbalance()
 //+------------------------------------------------------------------+
 bool cOrderBlock::checkLiquiditySweepBeforeOB(datetime mssLeg, int lookBack = 80)
   {
-   if(HasSweepBefore == true || checkedLS == true)
+   if(HasSweepBefore == true)
      {
       return true;
      }
@@ -1123,15 +1058,10 @@ bool cOrderBlock::checkLiquiditySweepBeforeOB(datetime mssLeg, int lookBack = 80
 
    if(sweepLevel < 0)
      {
-      checkedLS = true;
       return false;
      }
 
-   if(levelAlreadySweept(sweepStart, isBear, mssLeg) == true)
-     {
-      checkedLS = true;
-      return false;
-     }
+
 
    sweepEnd       = swingIndex;
    HasSweepBefore = true;
@@ -1145,7 +1075,6 @@ bool cOrderBlock::checkLiquiditySweepBeforeOB(datetime mssLeg, int lookBack = 80
    ObjectCreate(0, seepName, OBJ_ARROW, 0, sweepStart, sweepLevel);
    ObjectSetInteger(0, seepName, OBJPROP_ARROWCODE, 242);
    ObjectSetInteger(0, seepName, OBJPROP_COLOR, clrYellow);
-   checkedLS = true;
    return true;
   }
 
@@ -1226,7 +1155,7 @@ bool cOrderBlock::checkInZone()
 //+------------------------------------------------------------------+
 bool cOrderBlock::isAllGood(int i)
   {
-   // #26 Daily bias: always re-check even if allChecks=true (bias can flip tick-by-tick)
+// #26 Daily bias: always re-check even if allChecks=true (bias can flip tick-by-tick)
    if(g_dailyBiasEnabled)
      {
       bool bullishBias;
@@ -1234,11 +1163,19 @@ bool cOrderBlock::isAllGood(int i)
          bullishBias = (iClose(_Symbol, PERIOD_D1, 1) > iOpen(_Symbol, PERIOD_D1, 1));
       else
          bullishBias = (bidPrice > iOpen(_Symbol, PERIOD_D1, 0));
-      if(isBear == false && !bullishBias) { reason = ENUM_REASON_IS_COUNTER_BEARISH;  return false; }
-      if(isBear == true  &&  bullishBias) { reason = ENUM_REASON_IS_COUNTER_BULLISH;  return false; }
+      if(isBear == false && !bullishBias)
+        {
+         reason = ENUM_REASON_IS_COUNTER_BEARISH;
+         return false;
+        }
+      if(isBear == true  &&  bullishBias)
+        {
+         reason = ENUM_REASON_IS_COUNTER_BULLISH;
+         return false;
+        }
      }
 
-   // #57 09:00 UTC death zone â 31% win rate, London open fakeouts
+// #57 09:00 UTC death zone â 31% win rate, London open fakeouts
    if(inpSkip09UTC)
      {
       MqlDateTime gmt;
@@ -1250,38 +1187,38 @@ bool cOrderBlock::isAllGood(int i)
         }
      }
 
-    // #58 H4 inside bar filter — PERF: cached per-bar instead of per-OB
-    if(inpSkipH4InsideBar)
-      {
-       static MqlRates s_h4[3];
-       static datetime s_h4_bar = 0;
-       datetime curH4 = iTime(_Symbol, PERIOD_H4, 0);
-       if(curH4 != s_h4_bar)
-         { CopyRates(_Symbol, PERIOD_H4, 0, 3, s_h4); s_h4_bar = curH4; }
-       if(s_h4[1].high < s_h4[2].high && s_h4[1].low > s_h4[2].low)
-         {
-          reason = ENUM_REASON_H4_INSIDE_BAR;
-          return false;
-         }
-      }
+// #58 H4 inside bar filter — PERF: cached per-bar instead of per-OB
+   if(inpSkipH4InsideBar)
+     {
+      static MqlRates s_h4[3];
+      static datetime s_h4_bar = 0;
+      datetime curH4 = iTime(_Symbol, PERIOD_H4, 0);
+      if(curH4 != s_h4_bar)
+        { CopyRates(_Symbol, PERIOD_H4, 0, 3, s_h4); s_h4_bar = curH4; }
+      if(s_h4[1].high < s_h4[2].high && s_h4[1].low > s_h4[2].low)
+        {
+         reason = ENUM_REASON_H4_INSIDE_BAR;
+         return false;
+        }
+     }
 
-    // #60 D1 lower wick rejection — PERF: cached per-bar instead of per-OB
-    if(inpD1WickFilter)
-      {
-       static MqlRates s_d1[3];
-       static datetime s_d1_bar = 0;
-       datetime curD1 = iTime(_Symbol, PERIOD_D1, 0);
-       if(curD1 != s_d1_bar)
-         { CopyRates(_Symbol, PERIOD_D1, 0, 3, s_d1); s_d1_bar = curD1; }
-       double d1Range = s_d1[1].high - s_d1[1].low;
-       double lowerWick = MathMin(s_d1[1].open, s_d1[1].close) - s_d1[1].low;
-       double wickRatio = (d1Range > 0) ? lowerWick / d1Range : 0;
-       if(wickRatio > 0.35)
-         {
-          reason = ENUM_REASON_D1_WICK_REJECTION;
-          return false;
-         }
-      }
+// #60 D1 lower wick rejection — PERF: cached per-bar instead of per-OB
+   if(inpD1WickFilter)
+     {
+      static MqlRates s_d1[3];
+      static datetime s_d1_bar = 0;
+      datetime curD1 = iTime(_Symbol, PERIOD_D1, 0);
+      if(curD1 != s_d1_bar)
+        { CopyRates(_Symbol, PERIOD_D1, 0, 3, s_d1); s_d1_bar = curD1; }
+      double d1Range = s_d1[1].high - s_d1[1].low;
+      double lowerWick = MathMin(s_d1[1].open, s_d1[1].close) - s_d1[1].low;
+      double wickRatio = (d1Range > 0) ? lowerWick / d1Range : 0;
+      if(wickRatio > 0.35)
+        {
+         reason = ENUM_REASON_D1_WICK_REJECTION;
+         return false;
+        }
+     }
 
    if(allChecks == true)
       return true;
@@ -1349,7 +1286,7 @@ bool cOrderBlock::isAllGood(int i)
       obBuffer[i].trendDir = TREND_RANGE;
      }
 
-   // Macro trend filter: skip ALL OBs when monthly trend has no clear direction
+// Macro trend filter: skip ALL OBs when monthly trend has no clear direction
    if(g_macroTrendEnabled)
      {
       MarketTrend macroTrend = g_cachedMacroTrend;  // cached in RefreshTrendCache()
@@ -1360,7 +1297,7 @@ bool cOrderBlock::isAllGood(int i)
         }
      }
 
-   // D1 trend confluence: reject OB if it trades against the daily trend (W1->D1 cascade)
+// D1 trend confluence: reject OB if it trades against the daily trend (W1->D1 cascade)
    if(g_d1TrendEnabled)
      {
       MarketTrend d1Trend = g_cachedD1Trend;  // cached in RefreshTrendCache()
@@ -1371,8 +1308,8 @@ bool cOrderBlock::isAllGood(int i)
         }
      }
 
-  // Swing structure: SELL OB must be near H1 swing high; BUY OB near H1 swing low
-   // Uses iHighest/iLowest directly (GetLastSwingHigh breaks on first bar when strictMode=false)
+// Swing structure: SELL OB must be near H1 swing high; BUY OB near H1 swing low
+// Uses iHighest/iLowest directly (GetLastSwingHigh breaks on first bar when strictMode=false)
    if(inpRequireSwingStructure)
      {
       double atr14 = getAtr(14, PERIOD_H4);
@@ -1401,7 +1338,7 @@ bool cOrderBlock::isAllGood(int i)
         }
      }
 
-  // H4 trend confluence: reject OB if it trades against the H4 trend
+// H4 trend confluence: reject OB if it trades against the H4 trend
    if(g_h4TrendEnabled)
      {
       MarketTrend h4Trend = g_cachedH4Trend;  // cached in RefreshTrendCache()
@@ -1412,7 +1349,7 @@ bool cOrderBlock::isAllGood(int i)
         }
      }
 
-   // #56 Block counter-HTF direction: Bull+Short = 23% win rate catastrophe
+// #56 Block counter-HTF direction: Bull+Short = 23% win rate catastrophe
    if(inpBlockCounterHTF)
      {
       if(mHTFTrend == TREND_BULLISH && isBear)
@@ -1422,14 +1359,14 @@ bool cOrderBlock::isAllGood(int i)
         }
      }
 
-   // #21 Spread cap: skip entry if spread is too wide
+// #21 Spread cap: skip entry if spread is too wide
    if(inpMaxSpread > 0 && spread > inpMaxSpread)
      {
       reason = ENUM_REASON_SPREAD_TOO_WIDE;
       return false;
      }
 
-   // #23 Max simultaneous positions per direction
+// #23 Max simultaneous positions per direction
    if(inpMaxPositionsPerDir > 0)
      {
       int sameDir = 0;
@@ -1453,14 +1390,19 @@ bool cOrderBlock::isAllGood(int i)
 //+------------------------------------------------------------------+
 bool cOrderBlock::isMinQuality()
   {
-   // Minimum quality gate: MSS + FVG + impulse + daily bias — no sweep required, no FVG-fill required
-   if(isMitigated)                                       return false;
-   if(lssc == 0)                                         return false;
-   if(isMSS == false)                                    return false;
-   if(isImbalanced == false || imbalancePrice < 0.0)     return false;
-   if(topImpValid == false)                              return false;
+// Minimum quality gate: MSS + FVG + impulse + daily bias — no sweep required, no FVG-fill required
+   if(isMitigated)
+      return false;
+   if(lssc == 0)
+      return false;
+   if(isMSS == false)
+      return false;
+   if(isImbalanced == false || imbalancePrice < 0.0)
+      return false;
+   if(topImpValid == false)
+      return false;
 
-   // Daily bias — fast reversal guard (always re-check)
+// Daily bias — fast reversal guard (always re-check)
    if(g_dailyBiasEnabled)
      {
       bool bullishBias;
@@ -1468,13 +1410,18 @@ bool cOrderBlock::isMinQuality()
          bullishBias = (iClose(_Symbol, PERIOD_D1, 1) > iOpen(_Symbol, PERIOD_D1, 1));
       else
          bullishBias = (bidPrice > iOpen(_Symbol, PERIOD_D1, 0));
-      if(isBear == false && !bullishBias) return false;
-      if(isBear == true  &&  bullishBias) return false;
+      if(isBear == false && !bullishBias)
+         return false;
+      if(isBear == true  &&  bullishBias)
+         return false;
      }
 
    return true;
   }
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void cOrderBlock::trashme(NoTradeReason r)
   {
    isDone  = true;
@@ -1501,30 +1448,30 @@ bool cOrderBlock::CheckOBBreakerBlock()
    if(isBreakerBlock == true)
       return true;
 
-    // Bullish OB (original buy zone): check if price breaks below mitigatedLine
-    if(isBear == false)
-      {
-       if(bidPrice < mitigatedLine)
-         {
-          isBreakerBlock = true;
-          breakerBlockTime = TimeCurrent();
-          breakerBlockPrice = mitigatedLine;
-          isBear = true;  // Flip direction - now trading bearish
-          OBcolor = clrOrange;  // Visual indication
-          reason = ENUM_REASON_BREAKERBLOCK;
-          Print("DEBUG CheckOBBreakerBlock: Bullish OB became BreakerBlock! isBear flipped to ", isBear);
-          return true;
-         }
-      }
-
-    // Bearish OB (original sell zone): check if price breaks above mitigatedLine
-    if(isBear == true)
-      {
-       if(askPrice > mitigatedLine)
+// Bullish OB (original buy zone): check if price breaks below mitigatedLine
+   if(isBear == false)
+     {
+      if(bidPrice < mitigatedLine)
         {
          isBreakerBlock = true;
          breakerBlockTime = TimeCurrent();
-          breakerBlockPrice = mitigatedLine;
+         breakerBlockPrice = mitigatedLine;
+         isBear = true;  // Flip direction - now trading bearish
+         OBcolor = clrOrange;  // Visual indication
+         reason = ENUM_REASON_BREAKERBLOCK;
+         Print("DEBUG CheckOBBreakerBlock: Bullish OB became BreakerBlock! isBear flipped to ", isBear);
+         return true;
+        }
+     }
+
+// Bearish OB (original sell zone): check if price breaks above mitigatedLine
+   if(isBear == true)
+     {
+      if(askPrice > mitigatedLine)
+        {
+         isBreakerBlock = true;
+         breakerBlockTime = TimeCurrent();
+         breakerBlockPrice = mitigatedLine;
          isBear = false;  // Flip direction - now trading bullish
          OBcolor = clrOrange;  // Visual indication
          reason = ENUM_REASON_BREAKERBLOCK;
