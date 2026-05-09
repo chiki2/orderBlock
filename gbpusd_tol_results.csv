@@ -1,9 +1,0 @@
-label,pf,trades,dd_pct,balance,log
-Baseline,1.21,73,3.88,10392.39,8 expired
-tol=60,1.22,75,3.35,10420.13,8 expired
-tol=80,1.2,81,3.63,10416.92,8 expired
-tol=100,1.18,83,3.66,10387.73,8 expired
-STOP orders,1.21,73,3.88,10392.39,8 expired
-STOP + tol=80,1.2,81,3.63,10416.92,8 expired
-tp=1.5,1.3,73,3.85,10597.16,8 expired
-tp=1.5 + tol=80,1.22,81,3.65,10491.89,8 expired

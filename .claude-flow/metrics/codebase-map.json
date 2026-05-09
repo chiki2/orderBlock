@@ -1,11 +1,11 @@
 {
-  "timestamp": "2026-03-26T05:40:09.706Z",
+  "timestamp": "2026-03-30T06:47:34.647Z",
   "projectRoot": "/home/charles/.mt5/drive_c/Program Files/MetaTrader 5/MQL5/Experts/orderBlock",
   "structure": {
     "hasPackageJson": false,
     "hasTsConfig": false,
-    "hasClaudeConfig": true,
+    "hasClaudeConfig": false,
     "hasClaudeFlow": true
   },
-  "scannedAt": 1774503609706
+  "scannedAt": 1774853254647
 }
