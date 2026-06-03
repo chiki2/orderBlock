@@ -50,6 +50,7 @@ public:
    bool              isMinQuality();
    void              trashme(NoTradeReason r);
    bool              IsIndexValid(int index, orderBlock &array[]);
+   bool              HasSMTDivergence(int lookback=20);
   };
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -602,13 +603,10 @@ void cOrderBlock::init(int myIndex, datetime startT,
    revengeTicket        = INVALID_TICKET;
    tradeTicket          = INVALID_TICKET;
    ImbalancedFilled     = false;
-   lightBuzzTicket      = 0;
-   sweepRevenge         = false;
    isMitigated          = false;
    hasInducement        = false;
    isImbalanced         = false;
    imbalancePrice       = -1.0;
-   isLightbuzz          = false;
    is1R                 = false;
    hasChoch             = false;
    hasFibLevel          = false;
@@ -695,18 +693,23 @@ void cOrderBlock::init(int myIndex, datetime startT,
            {
             lowSide = low(obEnd);
             for(int k = obEnd; k <= obStart; k++)
-               if(low(k) < lowSide) lowSide = low(k);
+               if(low(k) < lowSide)
+                  lowSide = low(k);
            }
          else
            {
             lowSide = high(obEnd);
             for(int k = obEnd; k <= obStart; k++)
-               if(high(k) > lowSide) lowSide = high(k);
+               if(high(k) > lowSide)
+                  lowSide = high(k);
            }
         }
 
       mitigatedLine = (lsscPrice + lowSide) / 2;
      }
+     
+     
+   DrawOB(myIndex);
   }
 
 //+------------------------------------------------------------------+
@@ -1283,6 +1286,10 @@ bool cOrderBlock::isAllGood(int i)
       reason = ENUM_REASON_WEAK_IMPULSE;
       return false;
      }
+   else{
+      if ( HasSMTDivergence() == true )
+         return false;
+   }
 
 // OB is almost ready to trade, so if htf trend is ranging and then going opposite
 // we cancel the trade
@@ -1440,6 +1447,32 @@ void cOrderBlock::trashme(NoTradeReason r)
    stars   = 0;
    OBcolor = clrGray;
    reason  = r;
+  }
+
+
+//+------------------------------------------------------------------+
+//| Check if correlated symbol follows                               |
+//+------------------------------------------------------------------+
+bool cOrderBlock::HasSMTDivergence(int lookback = 20)
+  {
+   string corSymb = "XAGUSD";
+   int startIndex = bar(startTime,CTOB);
+   double silver0 = iClose(corSymb, CTOB, startIndex);
+   double gold0   = iClose(_Symbol, CTOB, startIndex);
+   
+   int topIndex   = bar(topImpTime, CTOB);
+   double silver  = (iClose(corSymb, CTOB, topIndex) - silver0) / silver0 * 100;
+   double gold    = (iClose(_Symbol, CTOB, topIndex) - gold0 ) / gold0 * 100;
+   
+   double divergence = MathAbs(gold - silver);
+   
+   if ( divergence > 0.3 ){
+      Print("Divergence");
+      return true;
+   }
+   
+   return false;
+   
   }
 
 
