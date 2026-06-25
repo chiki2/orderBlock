@@ -84,6 +84,38 @@ bool inConsolidation = false;
 bool positionOpened = false;
 string rectangleName = "ConsolidationRange";
 
+int RangeBarShift(string symbol, ENUM_TIMEFRAMES timeframe, datetime sourceTime, bool exact = false)
+  {
+   if(sourceTime <= 0)
+      return -1;
+
+   datetime barTimes[];
+   ArraySetAsSeries(barTimes, true);
+   int total = Bars(symbol, timeframe);
+   if(total <= 0)
+      return -1;
+
+   int copied = CopyTime(symbol, timeframe, 0, total, barTimes);
+   if(copied <= 0)
+      return -1;
+
+   for(int i = 0; i < copied; i++)
+     {
+      if(exact == true)
+        {
+         if(barTimes[i] == sourceTime)
+            return i;
+        }
+      else
+        {
+         if(sourceTime >= barTimes[i])
+            return i;
+        }
+     }
+
+   return -1;
+  }
+
 //+------------------------------------------------------------------+
 //| Update the open range high and low, draw visual objects           |
 //+------------------------------------------------------------------+
@@ -99,8 +131,8 @@ void UpdateRange(datetime currentPrice)
      }
 
 // Get bar indices for the range period
-   int startShift = iBarShift(_Symbol, _Period, rangeStart, true);
-   int endShift = iBarShift(_Symbol, _Period, rangeEnd, true);
+   int startShift = RangeBarShift(_Symbol, _Period, rangeStart, true);
+   int endShift = RangeBarShift(_Symbol, _Period, rangeEnd, true);
 
 // Check if shifts are valid
    if(startShift < 0 || endShift < 0 || startShift <= endShift)
